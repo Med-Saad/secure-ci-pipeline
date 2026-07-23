@@ -251,8 +251,11 @@ jobs:
           for x in "${X[@]}"; do [ -n "$x" ] && o_args+=(--experimental-exclude "base/$x"); done
           osv-scanner "${o_args[@]}" --format=json --output=out/base-osv.json || true
           [ -f out/base-osv.json ] || echo '{"results":[]}' > out/base-osv.json
+          # strip the base/ scan-root prefix so fingerprints line up with the
+          # head scan (which strips target/) — otherwise nothing ever inherits.
           python -m gate baseline \
             --osv out/base-osv.json --semgrep out/base-semgrep.sarif \
+            --strip-prefix base \
             --out out/baseline.json || echo '{"fingerprints":[]}' > out/baseline.json
 
       # --- The gate ----------------------------------------------------------
@@ -267,7 +270,7 @@ jobs:
         run: |
           # Build the argument list explicitly so only the scanners that actually
           # produced output are passed to the gate.
-          args=(evaluate --kev out/kev.json)
+          args=(evaluate --kev out/kev.json --strip-prefix target)
           [ -n "$SUPPRESSIONS_FILE" ] && [ -f "$SUPPRESSIONS_FILE" ] && args+=(--suppressions "$SUPPRESSIONS_FILE")
           [ -f out/osv.json ]         && args+=(--osv out/osv.json)
           [ -f out/trivy-image.json ] && args+=(--trivy out/trivy-image.json)

@@ -30,6 +30,26 @@ def test_no_fail_flag_forces_exit_0(tmp_path):
     assert rc == 0
 
 
+def test_strip_prefix_makes_head_and_base_sast_fingerprints_match(tmp_path):
+    """Regression: a head scan reports target/x and a base scan base/x. Without
+    prefix stripping their SAST fingerprints differ and nothing ever inherits."""
+    from gate import adapters
+    from gate.cli import _strip_prefixes
+
+    head = adapters.load("semgrep", SCANS / "semgrep.sarif")
+    base = adapters.load("semgrep", SCANS / "semgrep.sarif")
+    for f in head:
+        f.location = "target/" + f.location
+    for f in base:
+        f.location = "base/" + f.location
+    # Before stripping: no overlap.
+    assert not ({f.fingerprint() for f in head} & {f.fingerprint() for f in base})
+    _strip_prefixes(head, ["target"])
+    _strip_prefixes(base, ["base"])
+    # After stripping: identical findings fingerprint identically.
+    assert {f.fingerprint() for f in head} == {f.fingerprint() for f in base}
+
+
 def test_baseline_roundtrip_makes_findings_inherited(tmp_path):
     # 1. capture the tripwire's fingerprints as a baseline
     base = tmp_path / "base.json"

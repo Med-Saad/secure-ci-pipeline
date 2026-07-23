@@ -44,6 +44,25 @@ SCANNER_FLAGS = {
 }
 
 
+def _strip_prefixes(findings: list, prefixes: list[str]) -> None:
+    """Remove scan-root prefixes from finding locations, in place.
+
+    A PR-head scan runs in `target/` and the merge-base scan runs in `base/`, so
+    the same file surfaces as `target/x` vs `base/x`. Code-finding fingerprints
+    include the path, so without normalisation nothing would ever match across the
+    two scans and the delta would be permanently inert (this was a real bug). Deps
+    are unaffected — their fingerprint keys on package, not path — but stripping is
+    harmless there. Prefixes are matched longest-first so `target/` wins over `t`.
+    """
+    if not prefixes:
+        return
+    for p in sorted(prefixes, key=len, reverse=True):
+        pref = p if p.endswith("/") else p + "/"
+        for f in findings:
+            if f.location.startswith(pref):
+                f.location = f.location[len(pref):]
+
+
 def _collect_findings(args) -> list:
     findings = []
     for flag, tool in SCANNER_FLAGS.items():
@@ -55,6 +74,7 @@ def _collect_findings(args) -> list:
             loaded = adapters.load(tool, path)
             print(f"  {flag}: {len(loaded)} findings from {path}", file=sys.stderr)
             findings.extend(loaded)
+    _strip_prefixes(findings, getattr(args, "strip_prefix", None) or [])
     return findings
 
 
@@ -117,6 +137,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     ev = sub.add_parser("evaluate", help="run the gate")
     _add_scanner_flags(ev)
+    ev.add_argument("--strip-prefix", action="append", default=[],
+                    help="strip this leading path prefix from finding locations "
+                         "(repeatable) so head/base scans fingerprint comparably")
     ev.add_argument("--kev", help="CISA KEV catalog JSON")
     ev.add_argument("--epss", help="FIRST.org EPSS CSV (optionally .gz)")
     ev.add_argument("--suppressions", help="suppressions YAML/JSON")
@@ -135,6 +158,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     bl = sub.add_parser("baseline", help="emit merge-base fingerprints")
     _add_scanner_flags(bl)
+    bl.add_argument("--strip-prefix", action="append", default=[],
+                    help="strip this leading path prefix from finding locations "
+                         "(repeatable) so head/base scans fingerprint comparably")
     bl.add_argument("--out", help="write fingerprints JSON here")
     bl.set_defaults(func=cmd_baseline)
     return p
