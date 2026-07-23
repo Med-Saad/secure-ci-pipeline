@@ -7,14 +7,16 @@ engine** that turns five scanners' raw output into an actionable merge decision 
 blocking on *new, exploitable, fixable* findings instead of on a wall of CVSS
 scores.
 
-[![ci](https://img.shields.io/badge/ci-pending%20first%20push-lightgrey)](.github/workflows/ci.yml)
+[![ci](https://github.com/Med-Saad/secure-ci-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Med-Saad/secure-ci-pipeline/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
-[![tests](https://img.shields.io/badge/tests-35%20passing-brightgreen)](tests/)
+[![tests](https://img.shields.io/badge/tests-37%20passing-brightgreen)](tests/)
 
-> **Status:** the gate engine and its tests run locally today; the GitHub Actions
-> workflows are written and lint-clean but have **not yet run on a hosted runner**
-> (the badge activates on first push). See `docs/DEFENSE.md` JC-3.
+> **Status:** proven on GitHub hosted runners. CI runs pytest, dogfoods the gate
+> on this repo (0 blocking), asserts the KEV tripwire blocks, and keyless-signs the
+> SBOM with cosign + SLSA provenance. The merge-base delta was verified on a real
+> PR (a finding on the base was inherited; a new finding on the head blocked). See
+> `docs/DEFENSE.md` §0.
 
 ## Demo — the triage funnel
 
@@ -117,8 +119,9 @@ Details and rejected alternatives: **[docs/DEFENSE.md](docs/DEFENSE.md)**.
 
 ## Limitations
 
-- **Workflows unproven on a hosted runner** (gh unauthenticated locally) — the
-  biggest gap; see `docs/DEFENSE.md` JC-3.
+- **The external-target path is not yet CI-proven.** The self-scan path (incl.
+  the delta on a real PR) is green on hosted runners; the `target-scan.yml` audit
+  of trudesk has only been run locally. See `docs/DEFENSE.md` §0 / JC-3.
 - **Code-finding fingerprints are line-sensitive.** Dependency findings are
   line-independent; SAST/Dockerfile delta can miss a moved-but-identical finding.
 - **EPSS/KEV correctness is inherited** from external feeds; the gate does not

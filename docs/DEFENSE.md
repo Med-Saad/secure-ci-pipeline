@@ -24,32 +24,47 @@ the author should re-derive before trusting it in a room).
 ## 0. Verification status & catch-up debt
 
 **What is proven (safe to claim):**
-- The gate engine: **35 pytest tests pass**, and they pass **on a clean clone in
-  a fresh `python:3.12` container** (the mandated clean-container test, run
-  2026-07-23). That run *caught a real bug* — `.gitignore` was hiding three
-  committed test fixtures — which is exactly why the test is mandatory.
+- The gate engine: **37 pytest tests pass**, and they pass **on a clean clone in
+  a fresh `python:3.12` container** (the mandated clean-container test). That run
+  *caught a real bug* — `.gitignore` was hiding three committed test fixtures.
 - The gate runs end-to-end on **real trudesk scan output** and reproduces the
-  headline numbers (441 OSV / 185 pkgs; funnel 1015→242; KEV=0; the OpenSSL EPSS
-  escalations). `make demo` shows the KEV tripwire blocking on a clean clone.
-- The three workflows are **YAML-valid and actionlint-clean**.
+  headline numbers (441 OSV / 185 pkgs; funnel 1015→209 with build-only
+  suppressions; KEV=0; the OpenSSL EPSS escalations).
+- **The full pipeline is now proven on GitHub hosted runners** (`gh` was
+  authenticated; the repo is live at `Med-Saad/secure-ci-pipeline`). Confirmed
+  green on real runners:
+  - **self-scan** passes (0 blocking) — after the scoping + injection fixes below.
+  - **kev-tripwire job** blocks on the KEV path and passes via inverted assertion
+    ("gate: BLOCKED (9 blocking)… tripwire fired correctly on the KEV path").
+  - **cosign keyless signing + SLSA provenance** run and upload a signed SBOM.
+  - **merge-base delta** proven on a real PR (#1, now closed): a finding on the
+    base branch was correctly INHERITED (×3, not blocked) while a new finding on
+    the head BLOCKED. Funnel: raw 6 → new-vs-base 3 → blocking 1.
 
-**What is NOT proven (do not claim as working):**
-- **The workflows have never executed on a GitHub hosted runner** (`gh` is
-  unauthenticated locally). The cross-repo `_gate` checkout, the OSV checksum
-  step, the EPSS URL, the merge-base worktree, and cosign signing are all
-  unverified end to end. This is JC-3 and the single largest gap. Until a real
-  run is green, the CI badge stays "pending" and the repo should not be presented
-  as having a live pipeline.
+**Bugs the real runs caught (and fixed):**
+1. The self-scan parsed the committed trudesk SBOM (`examples/`) and the KEV
+   tripwire lockfile (`tests/`) as this repo's own manifests, re-importing 164
+   findings and pinning the badge red → fixed with `dep-scan-excludes`.
+2. Semgrep flagged 7 real `run-shell-injection` findings in our own workflow YAML
+   → fixed by routing inputs through `env:` (§2a). The pipeline caught a real vuln
+   in itself.
+3. The merge-base delta was inert for SAST because head/base scans used different
+   root prefixes (`target/` vs `base/`) → fixed with `--strip-prefix`.
+
+**What is still NOT fully proven:**
+- The **external-target** path (`target-scan.yml` against trudesk on a hosted
+  runner, incl. the `_gate` checkout for a *different* target repo and the image
+  build) has not been run in CI — only the self-scan path has. `[JC-3, narrowed]`
+- Pinned actions target Node 20 (deprecation warnings on every run) — wire
+  Dependabot before this ages further. `[JC-6]`
 
 **Files requiring the author's own rewrite (not editing — rewriting):** `README.md`,
 `docs/TUNING.md` (narrative sections), and the technical report written from
 `docs/report-skeleton.md`. All generated prose is marked `<!-- DRAFT -->`.
 
-**Commit shape:** 16 logical commits from the autonomous build. The plan targets
-25–40 "developed over weeks." This is honestly below target and *not* padded —
-inflating it with cosmetic commits would itself be a tell. The catch-up pass
-(README/report rewrite, JC-7 reconciliation, first hosted run, Dependabot wiring)
-will add the remaining commits over the real calendar time. `[judgement call]`
+**Commit shape:** ~21 logical commits from the autonomous build + the CI-fix pass.
+Below the plan's 25–40 target but *not* padded. The catch-up pass (README/report
+rewrite, JC-7 reconciliation, Dependabot) will add the rest over calendar time.
 
 ---
 
