@@ -1,0 +1,71 @@
+{
+  "target": {
+    "repo": "polonel/trudesk",
+    "sha": "29f3f1698f341e3d8fcc4f4eb5340ee43427fe63"
+  },
+  "kev_catalog_version": "2026.07.23",
+  "raw_counts": {
+    "osv_deps": 441,
+    "trivy_image_os": 23,
+    "trivy_image_lang": 402,
+    "semgrep_unscoped": 149,
+    "semgrep_scoped": 108
+  },
+  "funnel": {
+    "raw": 1015,
+    "after_scoping": 974,
+    "gated": 572,
+    "meets_policy": 243,
+    "blocking": 242
+  },
+  "by_domain": {
+    "deps": {
+      "total": 441,
+      "block": 227,
+      "report": 214
+    },
+    "image_os": {
+      "total": 23,
+      "block": 13,
+      "report": 10
+    },
+    "image_lang": {
+      "total": 402,
+      "block": 0,
+      "report": 402
+    },
+    "sast": {
+      "total": 108,
+      "block": 2,
+      "report": 106
+    }
+  },
+  "kev_total_on_target": 0,
+  "epss_escalated_blocks": [
+    {
+      "id": "CVE-2022-4304",
+      "severity": "Medium",
+      "epss": 0.16195,
+      "package": "libcrypto1.1@1.1.1n-r0"
+    },
+    {
+      "id": "CVE-2023-2650",
+      "severity": "Medium",
+      "epss": 0.75116,
+      "package": "libcrypto1.1@1.1.1n-r0"
+    },
+    {
+      "id": "CVE-2022-4304",
+      "severity": "Medium",
+      "epss": 0.16195,
+      "package": "libssl1.1@1.1.1n-r0"
+    },
+    {
+      "id": "CVE-2023-2650",
+      "severity": "Medium",
+      "epss": 0.75116,
+      "package": "libssl1.1@1.1.1n-r0"
+    }
+  ],
+  "blocked": true
+}
