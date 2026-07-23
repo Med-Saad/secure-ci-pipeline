@@ -1,0 +1,9 @@
+{
+  "name": "kev-tripwire",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Synthetic fixture pinning a known-exploited dependency (CVE-2021-21315) to exercise the CISA KEV block rule. Not part of any real application.",
+  "dependencies": {
+    "systeminformation": "5.3.0"
+  }
+}
