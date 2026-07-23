@@ -11,16 +11,20 @@ venv/
 htmlcov/
 
 # Scanner outputs generated at runtime (real evidence is committed under
-# examples/evidence/ explicitly; everything else stays out of git)
+# examples/evidence/ and test fixtures under tests/fixtures/ explicitly; every
+# other scanner output stays out of git)
 /scan-out/
 *.sarif
-!examples/**/*.sarif
 osv.json
 trivy-*.json
 semgrep-*.json
 gitleaks-*.json
 hadolint.json
 sbom.cdx.json
+
+# ...but never ignore committed fixtures or evidence (these dirs are curated)
+!tests/fixtures/**
+!examples/**
 
 # Per-developer Claude Code settings (not shared)
 .claude/settings.local.json

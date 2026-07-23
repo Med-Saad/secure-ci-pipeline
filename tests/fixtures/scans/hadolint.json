@@ -1,0 +1,5 @@
+[
+  { "file": "Dockerfile", "line": 1, "code": "DL3006", "level": "warning", "message": "Always tag the version of an image explicitly" },
+  { "file": "Dockerfile", "line": 12, "code": "DL3002", "level": "error", "message": "Last USER should not be root" },
+  { "file": "Dockerfile", "line": 20, "code": "DL3059", "level": "info", "message": "Multiple consecutive RUN instructions" }
+]
