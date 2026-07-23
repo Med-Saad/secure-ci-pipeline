@@ -1,0 +1,14 @@
+{
+  "_comment": "Example ci-gate policy overriding the defaults in gate/policy.py. Pass with --policy. Every value here is a tuning decision you must be able to defend (see docs/TUNING.md).",
+  "epss_escalate": 0.10,
+  "require_fix_available": true,
+  "delta_enabled": true,
+  "domains": {
+    "deps":       { "gated": true,  "floor": "high" },
+    "image_os":   { "gated": true,  "floor": "high" },
+    "image_lang": { "gated": false, "floor": "high" },
+    "sast":       { "gated": true,  "floor": "high" },
+    "secret":     { "gated": true,  "floor": "low" },
+    "dockerfile": { "gated": true,  "floor": "high" }
+  }
+}

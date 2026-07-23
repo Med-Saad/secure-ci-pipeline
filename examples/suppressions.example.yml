@@ -1,0 +1,37 @@
+# Example suppression file for ci-gate. Pass with `--suppressions`.
+#
+# A suppression is an auditable, expiring override — a written claim that a
+# finding does not apply here. Hard rules (enforced by the engine, not this file):
+#   - a KEV finding can NEVER be suppressed;
+#   - an EXPIRED suppression stops applying, so the finding re-surfaces (the gate
+#     fails toward blocking — the safe direction);
+#   - an empty `match:` is rejected (it would suppress everything).
+#
+# Every entry needs an `id` and a `reason`. Keep the reason honest about
+# confidence — see docs/DEFENSE.md for how suppressions are registered.
+
+suppressions:
+  # ILLUSTRATIVE, low confidence. Not applied to the authoritative trudesk audit
+  # (see TUNING.md §6) — it demonstrates the mechanism and shape only.
+  - id: SUP-EXAMPLE-1
+    reason: >
+      Example only: a dependency vuln reachable exclusively through a build-time
+      dev tool that is stripped from the production image. Confidence LOW — this
+      claim requires verifying the dependency graph and the image contents, which
+      a real user must do before trusting it.
+    expires: "2026-12-31"          # forces an annual re-review
+    match:
+      domain: deps
+      package: some-dev-only-package
+
+  # Scoping-style suppression: findings under a vendored path the repo does not
+  # own. Prefer fixing the SAST exclude list (a workflow input) over this; shown
+  # here because sometimes a single finding needs a targeted, logged exception.
+  - id: SUP-EXAMPLE-2
+    reason: >
+      Example only: a single SAST finding in vendored third-party code tracked
+      upstream. Confidence MEDIUM for the scoping rationale, LOW that this exact
+      line is safe.
+    match:
+      domain: sast
+      location_glob: "third_party/**"

@@ -160,7 +160,25 @@ can never reach the OIDC token that keyless signing uses.
 _(populated as suppressions are added; every entry carries file:line, the
 surrounding code, and a confidence label — see TUNING.md for the narrative)_
 
-Nothing suppressed yet.
+**The authoritative trudesk audit applies ZERO suppressions** (TUNING.md §6). This
+is deliberate: a suppression is a semantic claim about the target's code, and
+verifying trudesk internals well enough to make those claims safely is out of
+autonomous scope. A confident-but-wrong suppression is the worst failure mode of
+this working mode, so none were written against the real target.
+
+The two entries below live in `examples/suppressions.example.yml` and are
+**illustrative only** — they exercise the mechanism and document the format; they
+are not applied to any real scan.
+
+| id | target | reason (abridged) | confidence | applied? |
+|---|---|---|---|---|
+| SUP-EXAMPLE-1 | `deps` pkg `some-dev-only-package` | dev-only build tool, stripped from prod image | `[low]` — needs dep-graph + image verification | no (example) |
+| SUP-EXAMPLE-2 | `sast` under `third_party/**` | vendored code owned upstream | `[medium]` scoping / `[low]` per-line | no (example) |
+
+**Judgement call:** if a real user *does* need to suppress a trudesk finding, the
+register must gain a real entry with the surrounding code quoted and a confidence
+label — that is the audit trail, and it is intentionally empty right now rather
+than filled with guesses.
 
 ---
 
