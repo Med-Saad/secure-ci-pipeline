@@ -1,0 +1,38 @@
+# Full audit of the pinned scan target (trudesk). Manual, on demand: this is the
+# run that produces the real-code evidence for TUNING.md and the triage funnel.
+# It is a *full audit* (delta disabled) — every finding is gated, because there
+# is no PR base to diff against and the point is the total picture.
+#
+# The target is pinned by SHA so the numbers stay reproducible against upstream.
+name: target-scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      target-repo:
+        description: "owner/name of the target"
+        type: string
+        default: "polonel/trudesk"
+      target-ref:
+        description: "pinned SHA of the target"
+        type: string
+        default: "29f3f1698f341e3d8fcc4f4eb5340ee43427fe63"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  audit:
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      target-repo: ${{ inputs.target-repo }}
+      target-ref: ${{ inputs.target-ref }}
+      scan-image: true
+      dockerfile-dir: "."
+      # trudesk vendors/bundles ~300k lines; scope SAST to first-party source so
+      # the funnel's "after scoping" stage is real. See TUNING.md.
+      sast-excludes: "mobile/lib,src/public,node_modules,test"
+      secrets-full-history: false   # trudesk history is large; scan the tree
+      full-audit: true              # no merge base — gate everything
+      fail-on-block: false          # audit: we want the report, not a red X

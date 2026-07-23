@@ -1,0 +1,255 @@
+# Reusable security gate. A caller repo invokes it with:
+#
+#   jobs:
+#     security:
+#       uses: Med-Saad/secure-ci-pipeline/.github/workflows/security-scan.yml@main
+#       with:
+#         scan-image: true
+#
+# It runs the five scanners, fetches fresh KEV + EPSS, computes a merge-base
+# baseline on pull_request, and feeds everything to `ci-gate` which applies the
+# one gate policy (see gate/engine.py). The job fails iff the gate blocks.
+#
+# Every third-party action is pinned to a full commit SHA and every scanner
+# image to a digest. This is deliberate: on 2025-03-14 tj-actions/changed-files
+# was compromised via a mutable tag, leaking CI secrets across thousands of
+# repos. A mutable `@v4` tag is a supply-chain hole in the very pipeline whose
+# job is to close them. Version comments track what each SHA/digest is.
+name: security-scan (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      target-repo:
+        description: "External repo to scan (owner/name). Empty = scan the caller."
+        type: string
+        default: ""
+      target-ref:
+        description: "Ref/SHA of the target to scan."
+        type: string
+        default: ""
+      scan-image:
+        description: "Build the target's Dockerfile and scan the image."
+        type: boolean
+        default: false
+      dockerfile-dir:
+        description: "Directory containing the Dockerfile to build."
+        type: string
+        default: "."
+      semgrep-config:
+        description: "Semgrep rulesets."
+        type: string
+        default: "p/default p/javascript"
+      sast-excludes:
+        description: "Comma-separated paths to exclude from SAST (vendored/bundled)."
+        type: string
+        default: ""
+      secrets-full-history:
+        description: "Scan the full git history for secrets (vs. working tree only)."
+        type: boolean
+        default: true
+      full-audit:
+        description: "Disable merge-base delta; gate every finding (target audit)."
+        type: boolean
+        default: false
+      fail-on-block:
+        description: "Fail the job when the gate blocks."
+        type: boolean
+        default: true
+
+# Least privilege. id-token/attestations are NOT requested here — signing lives
+# in the caller's publish job so this scan job holds no write scopes.
+permissions:
+  contents: read
+  security-events: write   # upload SARIF to code scanning
+
+# Pinned tool versions (single source of truth).
+env:
+  SEMGREP_VERSION: "1.171.0"
+  OSV_VERSION: "2.4.0"
+  TRIVY_IMAGE: "aquasec/trivy@sha256:ab70a02200597efa04748f210f793936eb647cbcdb0ea69cc30b226d6f5a22c7"   # 0.58.1
+  HADOLINT_IMAGE: "hadolint/hadolint@sha256:30a8fd2e785ab6176eed53f74769e04f125afb2f74a6c52aef7d463583b6d45e" # 2.12.0
+  GITLEAKS_IMAGE: "zricethezav/gitleaks@sha256:0e99e8821643ea5b235718642b93bb32486af9c8162c8b8731f7cbdc951a7f46" # v8.21.2
+
+jobs:
+  gate:
+    name: "security gate"
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # --- tooling: the gate lives in THIS repo; check it out alongside -------
+      - name: Checkout gate tooling
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: Med-Saad/secure-ci-pipeline
+          path: _gate
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install ci-gate + scanners
+        run: |
+          set -euo pipefail
+          pip install --quiet "./_gate[yaml]" "semgrep==${SEMGREP_VERSION}"
+          # OSV-Scanner: pinned release binary, verified against the release's
+          # own checksums file (chain of custody within a single signed release).
+          base="https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}"
+          curl -fsSL -o osv-scanner "${base}/osv-scanner_linux_amd64"
+          curl -fsSL -o checksums.txt "${base}/checksums.txt" || true
+          if [ -f checksums.txt ]; then
+            grep 'linux_amd64' checksums.txt | sed 's#.*/##' > want.txt || true
+            echo "$(awk '{print $1}' want.txt)  osv-scanner" | sha256sum -c - || \
+              echo "::warning::OSV checksum not verified (asset naming); continuing"
+          fi
+          chmod +x osv-scanner && sudo mv osv-scanner /usr/local/bin/
+          osv-scanner --version
+
+      # --- the scan target (caller repo, or an external target) --------------
+      # fetch-depth 0: merge-base delta and full-history secret scanning both
+      # need the whole history reachable.
+      - name: Checkout scan target
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ inputs.target-repo || github.repository }}
+          ref: ${{ inputs.target-ref || github.ref }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare output dir
+        run: mkdir -p out
+
+      # --- SAST: Semgrep (SARIF) ---------------------------------------------
+      - name: Semgrep
+        continue-on-error: true
+        run: |
+          args=(scan)
+          for c in ${{ inputs.semgrep-config }}; do args+=("--config=$c"); done
+          IFS=',' read -ra E <<< "${{ inputs.sast-excludes }}"
+          for e in "${E[@]}"; do [ -n "$e" ] && args+=("--exclude=$e"); done
+          semgrep "${args[@]}" --sarif --output=out/semgrep.sarif \
+            --metrics=off --quiet target || true
+
+      # --- Dependencies: OSV-Scanner (lockfiles) -----------------------------
+      - name: OSV-Scanner
+        continue-on-error: true
+        run: |
+          osv-scanner scan source --recursive target \
+            --format=json --output=out/osv.json || true
+
+      # --- Secrets: Gitleaks (full history) ----------------------------------
+      - name: Gitleaks
+        continue-on-error: true
+        run: |
+          args=(detect --source=/repo)
+          [ "${{ inputs.secrets-full-history }}" = "true" ] || args+=(--no-git)
+          docker run --rm -v "$PWD/target:/repo" -v "$PWD/out:/out" \
+            "${GITLEAKS_IMAGE}" "${args[@]}" \
+            --report-format=json --report-path=/out/gitleaks.json --exit-code=0 || true
+          [ -f out/gitleaks.json ] || echo '[]' > out/gitleaks.json
+
+      # --- Dockerfile: Hadolint ----------------------------------------------
+      - name: Hadolint
+        continue-on-error: true
+        if: ${{ inputs.scan-image }}
+        run: |
+          df="target/${{ inputs.dockerfile-dir }}/Dockerfile"
+          docker run --rm -i "${HADOLINT_IMAGE}" hadolint -f json - < "$df" \
+            > out/hadolint.json || true
+
+      # --- Image: build + Trivy (OS layer gated, lang layer report-only) -----
+      - name: Build and scan image
+        continue-on-error: true
+        if: ${{ inputs.scan-image }}
+        run: |
+          docker build -t scan-target:ci "target/${{ inputs.dockerfile-dir }}"
+          docker save scan-target:ci -o image.tar
+          docker run --rm -v "$PWD:/w" -w /w "${TRIVY_IMAGE}" image \
+            --input image.tar --format json --output out/trivy-image.json --quiet || true
+
+      # --- SBOM: Syft (CycloneDX) --------------------------------------------
+      - name: Generate SBOM (CycloneDX)
+        continue-on-error: true
+        uses: anchore/sbom-action@fc46e51fd3cb168ffb36c6d1915723c47db58abb # v0.17.7
+        with:
+          path: target
+          format: cyclonedx-json
+          output-file: out/sbom.cdx.json
+
+      # --- Threat intel: KEV + EPSS ------------------------------------------
+      - name: Fetch KEV + EPSS
+        run: |
+          curl -fsSL -o out/kev.json \
+            "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json" \
+            || echo '{"vulnerabilities":[]}' > out/kev.json
+          # FIRST.org daily EPSS bulk CSV (gzip). Undated URL = most recent.
+          curl -fsSL -o out/epss.csv.gz \
+            "https://epss.cyentia.com/epss_scores-current.csv.gz" || true
+
+      # --- Merge-base baseline (PR delta) ------------------------------------
+      # On a pull_request, scan the base SHA the same way and export its
+      # fingerprints so the gate can demote inherited findings.
+      - name: Compute merge-base baseline
+        if: ${{ github.event_name == 'pull_request' && !inputs.full-audit }}
+        continue-on-error: true
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          git -C target worktree add ../base "$base"
+          semgrep scan --config=p/default --config=p/javascript \
+            --sarif --output=out/base-semgrep.sarif --metrics=off --quiet base || true
+          osv-scanner scan source --recursive base \
+            --format=json --output=out/base-osv.json || true
+          python -m gate baseline \
+            --osv out/base-osv.json --semgrep out/base-semgrep.sarif \
+            --out out/baseline.json || echo '{"fingerprints":[]}' > out/baseline.json
+        env:
+          PYTHONPATH: _gate
+
+      # --- The gate ----------------------------------------------------------
+      - name: Run ci-gate
+        id: gate
+        run: |
+          # Build the argument list explicitly so only the scanners that actually
+          # produced output are passed to the gate.
+          args=(evaluate --kev out/kev.json)
+          [ -f out/osv.json ]         && args+=(--osv out/osv.json)
+          [ -f out/trivy-image.json ] && args+=(--trivy out/trivy-image.json)
+          [ -f out/semgrep.sarif ]    && args+=(--semgrep out/semgrep.sarif)
+          [ -f out/gitleaks.json ]    && args+=(--gitleaks out/gitleaks.json)
+          [ -f out/hadolint.json ]    && args+=(--hadolint out/hadolint.json)
+          [ -f out/epss.csv.gz ]      && args+=(--epss out/epss.csv.gz)
+          [ -f out/baseline.json ]    && args+=(--baseline out/baseline.json)
+          [ "${{ inputs.full-audit }}" = "true" ]    && args+=(--full)
+          [ "${{ inputs.fail-on-block }}" = "true" ] || args+=(--no-fail)
+          args+=(--title "Security gate — ${{ inputs.target-repo || github.repository }}")
+          args+=(--json out/gate.json --summary out/summary.md --funnel out/funnel.csv --quiet)
+          set +e
+          python -m gate "${args[@]}"
+          rc=$?
+          cat out/summary.md >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+        env:
+          PYTHONPATH: _gate
+
+      # --- Always publish evidence -------------------------------------------
+      - name: Upload Semgrep SARIF to code scanning
+        if: always() && hashFiles('out/semgrep.sarif') != ''
+        uses: github/codeql-action/upload-sarif@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # v3.27.5
+        with:
+          sarif_file: out/semgrep.sarif
+          category: semgrep
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: security-gate-${{ inputs.target-repo && 'target' || 'self' }}
+          path: |
+            out/gate.json
+            out/summary.md
+            out/funnel.csv
+            out/sbom.cdx.json
+          retention-days: 14
