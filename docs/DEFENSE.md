@@ -82,6 +82,77 @@ lie. One owner per domain keeps the numbers honest.
 
 **Confidence:** `[measured]` — the OSV(441)/Trivy-fs(402) delta is real (F2).
 
+### D2 — Every action pinned to a SHA, every scanner image to a digest
+
+**Decision.** In the three production workflows, `actions/*`, `github/codeql-action`,
+`sigstore/cosign-installer`, `anchore/sbom-action`, and `actions/attest-build-provenance`
+are pinned to full commit SHAs (version in a trailing comment); Trivy, Hadolint,
+and Gitleaks images are pinned to `@sha256:` digests. Scanner CLIs (Semgrep, OSV)
+are pinned to exact versions.
+
+**Why.** On 2025-03-14 `tj-actions/changed-files` was compromised: an attacker
+force-updated the tags (including `@v44` and others) to point at a malicious
+commit that dumped runner memory — leaking CI secrets from thousands of repos
+that trusted a mutable tag. A pipeline whose job is to *close* supply-chain holes
+cannot itself depend on mutable references. A SHA is immutable; a tag is not.
+
+**Cost, stated honestly.** SHA pins do not auto-update, so they rot — a pinned
+action misses security patches until someone bumps it. The standard mitigation is
+Dependabot's `github-actions` ecosystem, which opens PRs to move the SHA while
+preserving the pin. That is noted as future work (not wired, since CI isn't live
+yet). This is the real tradeoff an interviewer will probe: immutability vs.
+staleness, resolved in favour of immutability + a bump bot.
+
+**Confidence:** `[high]`. The incident is real (JC-2 records the "verify the date"
+check).
+
+### D3 — Three-workflow topology, one gate implementation
+
+**Decision.**
+- `security-scan.yml` — `workflow_call`, the portable core. Checks out the gate
+  tooling (this repo) into `_gate/`, `pip install`s it, checks out the *scan
+  target* separately, runs the scanners, and calls `python -m gate`.
+- `ci.yml` — `push`/`pull_request`: runs pytest, then calls the reusable workflow
+  to scan *this* repo (dogfood → the badge), then a `main`-only `sign` job.
+- `target-scan.yml` — `workflow_dispatch`: full audit of trudesk at its pinned SHA.
+
+**Why check out the gate into `_gate/` rather than `pip install` from PyPI.** The
+gate isn't published to PyPI, and vendoring the YAML into every later repo would
+fork the logic. Installing the package from its own repo keeps one implementation
+that A/C/#4/#5 all call. **Alternative rejected:** a published PyPI package —
+premature at this size and adds a release process to maintain.
+
+**Confidence:** `[high]` on topology; `[medium]` that the cross-repo `_gate`
+checkout + `pip install ./_gate` works exactly as written on a hosted runner —
+this is JC-3, the untested-on-real-runner gap (gh is unauthenticated locally).
+
+### D4 — Merge-base delta via a base-ref worktree scan
+
+**Decision.** On `pull_request`, the workflow adds a git worktree at
+`pull_request.base.sha`, re-runs OSV + Semgrep there, and exports the base
+fingerprints via `ci-gate baseline`. The main evaluation passes `--baseline`, and
+the engine demotes any finding whose fingerprint is on the base to INHERITED.
+
+**Why re-scan the base rather than diff the source.** A source diff cannot tell
+you whether a *dependency* vuln is new — a lockfile line can be unchanged while a
+new advisory lands against it, or changed while the vuln is identical. Scanning
+both refs and diffing *findings* (by fingerprint) is the only way to answer "did
+this PR introduce this?" honestly. **Cost:** it roughly doubles scan time on PRs;
+acceptable because it only runs the two cheap scanners (OSV, Semgrep), not the
+image build.
+
+**Confidence:** `[high]` on the approach; `[medium]` on the exact worktree
+commands under all PR event shapes (JC-4).
+
+### D5 — Least privilege, signing isolated
+
+**Decision.** The scan job requests only `contents: read` +
+`security-events: write`. `id-token: write` / `attestations: write` live *only* in
+the `sign` job, which runs on push-to-main (never on fork PRs). So a malicious PR
+can never reach the OIDC token that keyless signing uses.
+
+**Confidence:** `[high]`.
+
 ---
 
 ## 2. Suppression register
@@ -95,7 +166,74 @@ Nothing suppressed yet.
 
 ## 3. Interview questions per component
 
-_(five per component, added as each component lands)_
+### Gate engine (gate/)
+
+1. **Why does UNKNOWN severity sort below LOW, and what breaks if it sorts
+   above?** — A floor check is `severity >= floor`. If UNKNOWN outranked LOW, any
+   finding a scanner failed to rate would satisfy a LOW floor and could block or,
+   worse, be treated as HIGH-adjacent. Sorting it lowest means an unrated finding
+   is report-only unless KEV/EPSS escalates it — fail-safe toward *not* blocking
+   on noise, while still never hiding a known-exploited one.
+
+2. **KEV blocks even when the finding is inherited from the base branch. Defend
+   that against "but it's not this PR's regression."** — The delta rule exists to
+   avoid punishing a PR for pre-existing debt. KEV is different in kind: a
+   known-exploited vuln is an active incident regardless of who introduced it.
+   Letting it ride because "it was already there" is exactly how exploited CVEs
+   sit unpatched for months. Inheritance excuses *noise*, not *exploitation*.
+
+3. **Why can EPSS only escalate, never relax?** — EPSS is a probability estimate
+   with real error bars. Using a *low* EPSS to pardon a HIGH finding would let a
+   model's uncertainty override a concrete severity rating — you'd suppress real
+   risk on a prediction. Using a *high* EPSS to escalate a MEDIUM only ever adds
+   caution. Asymmetry keeps the model's errors on the safe side.
+
+4. **The fix-availability relaxation downgrades a HIGH with no fix to
+   report-only. Isn't that hiding a real vuln?** — It surfaces it (REPORT), it
+   does not hide it. The claim is narrower: blocking a *merge* on something the
+   developer cannot fix in that PR produces a gate people learn to bypass. So a
+   floor-only, no-fix finding is reported; but if EPSS says it's being exploited,
+   urgency overrides actionability and it blocks anyway. Unknown fix status does
+   NOT relax — only a confirmed "no fix."
+
+5. **A suppression can hide a CRITICAL. What stops it being abused?** — Four
+   things: it cannot suppress a KEV finding (hard rule); it requires a written
+   reason; it supports an expiry after which the finding re-surfaces (fails toward
+   blocking); and every fired suppression is recorded in the gate output with its
+   id. The register in this file is the human audit trail. It's a deliberate,
+   logged risk acceptance, not a silent mute.
+
+### Pipeline / workflows (.github/workflows/)
+
+1. **Why SHA-pin actions when `@v4` is more maintainable?** — See D2: the
+   tj-actions/changed-files compromise (2025-03-14) moved a tag to a malicious
+   commit and exfiltrated secrets from every repo trusting that tag. Immutability
+   beats convenience for anything running in a privileged CI context; Dependabot
+   bumps the pins so you don't lose patches.
+
+2. **Your gate re-scans the merge base on every PR. Why not just diff the
+   changed files?** — See D4: a file diff can't tell you a dependency vuln is new
+   (a new advisory can land against an unchanged lockfile line). Diffing
+   *findings* by fingerprint across two scans is the only honest delta.
+
+3. **Why is OSV gating the language deps but Trivy only reporting them?** — They
+   see overlapping sets from different vantage points (source lockfile vs. built
+   image). Gating both double-counts the same CVE and corrupts the funnel. One
+   owner per domain; the Trivy-vs-OSV delta is published as signal (tuning F2).
+
+4. **What stops a malicious fork PR from stealing your signing token?** — See
+   D5: `id-token: write` exists only in the `sign` job, which is gated to
+   push-on-main. Fork PRs run the scan job, which holds no write scopes beyond
+   code-scanning upload.
+
+5. **Semgrep, Trivy, etc. all run with `continue-on-error: true`. Doesn't that
+   let a broken scanner pass the gate silently?** — The scanners are non-fatal so
+   one tool's crash doesn't lose the other four's findings, but the *gate* step is
+   fatal: it fails the job on a blocking verdict. The risk this trades in is a
+   scanner silently producing *no* findings (parse failure looking like "clean").
+   That is exactly why the recon stage asserted OSV actually parsed the Berry
+   lockfile (non-zero package count) rather than trusting a zero — the same
+   defensive check belongs in the gate (tracked as future work, JC-5).
 
 ---
 
@@ -108,3 +246,26 @@ choice was made autonomously and should be confirmed.
   happy defending "why not OPA" in a consulting interview (the honest answer is
   "size"; a NIS2/CRA consultant might expect policy-as-code in a standard
   engine). `[decision recorded, low regret]`
+- **JC-2.** Verify the tj-actions/changed-files compromise details before citing
+  them in a room (date 2025-03-14, mutable-tag → memory-dump → secret exfiltration).
+  Written from training knowledge, not re-checked against a primary source this
+  session. `[medium confidence — verify the specifics]`
+- **JC-3.** The three workflows have **never run on a hosted runner** — `gh` is
+  unauthenticated locally so nothing was pushed. YAML + actionlint are clean, but
+  the cross-repo `_gate` checkout, the `pip install ./_gate`, the OSV checksum
+  step, and the EPSS `-current.csv.gz` URL are all unverified end to end. This is
+  the single biggest untested surface. First real push will shake out issues.
+- **JC-4.** The merge-base worktree step (`git worktree add ../base <sha>`) is
+  written for the standard `pull_request` event; confirm it behaves on
+  `pull_request_target` and on first-PR-to-empty-base cases if those arise.
+- **JC-5.** The gate does not yet assert that each scanner *actually produced
+  output* (vs. silently emitting zero on a parse failure). Recon did this check
+  manually; it should become a gate feature (a `--require-scanners osv,semgrep`
+  flag that fails if an expected input is empty). Noted, not built.
+- **JC-6.** Pinned action/image versions (checkout v4.2.2, trivy 0.58.1, etc.)
+  are current as of 2026-07-23 but not the newest; wire Dependabot
+  `github-actions` before relying on them long-term.
+- **JC-7.** Severity-count reconciliation: the OSV adapter reports trudesk as
+  **26 Critical / 202 High** (from GHSA text severity), vs. the recon record's
+  **29 / 204** (a different counting path). Small, but pick one method and make
+  the tuning record and the engine agree. `[measured, needs reconciliation]`
