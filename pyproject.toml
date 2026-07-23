@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ci-gate"
+version = "0.1.0"
+description = "Portable severity/KEV/EPSS/delta gate for a security-hardened CI pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Med-Saad" }]
+# Deliberately dependency-free at runtime: the gate must run on a clean CI
+# runner with nothing but the standard library, so it cannot rot on a
+# transitive dependency and cannot itself widen the attack surface it audits.
+# PyYAML is optional and only needed to read a YAML suppression file; a JSON
+# suppression file works with zero dependencies (see gate/suppress.py).
+dependencies = []
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6"]
+dev = ["pytest>=8", "PyYAML>=6"]
+
+[project.scripts]
+ci-gate = "gate.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["gate*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
