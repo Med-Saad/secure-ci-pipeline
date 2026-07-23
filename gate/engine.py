@@ -95,10 +95,15 @@ def evaluate_one(
     epss_escalated = f.epss is not None and f.epss >= policy.epss_escalate
     meets_floor = f.severity >= dp.floor
 
-    if not dp.gated and not epss_escalated:
+    # Report-only domains yield ONLY to KEV (handled in rule 1 above). EPSS must
+    # not escalate them: a report-only layer (image language packages) overlaps a
+    # gated layer (OSV app deps), so escalating here would double-count the same
+    # CVE that is already gated at its owning layer. See DEFENSE.md D1.
+    if not dp.gated:
         return EvaluatedFinding(
             f, Decision.REPORT,
-            f"{f.domain.value} is report-only (overlaps a gated layer)",
+            f"{f.domain.value} is report-only (overlaps a gated layer; "
+            f"only KEV overrides this)",
         )
 
     if not (meets_floor or epss_escalated):

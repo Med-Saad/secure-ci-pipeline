@@ -172,6 +172,17 @@ def test_image_lang_is_report_only():
     assert "report-only" in r.reason
 
 
+def test_epss_does_not_escalate_report_only_domain():
+    # A high-EPSS finding in the report-only image language layer must stay
+    # REPORT — it is already owned (and potentially gated) at the deps layer.
+    f = Finding(domain=Domain.IMAGE_LANG, tool="trivy", rule_id="CVE-2021-3807",
+                severity=Severity.MEDIUM, identifiers=frozenset({"CVE-2021-3807"}),
+                package=Package("ansi-regex", "3.0.0"), fix_available=True)
+    epss = EpssScores({"CVE-2021-3807": (0.9, 0.99)})
+    r = gate_one(f, epss=epss)
+    assert r.decision is Decision.REPORT
+
+
 def test_image_lang_kev_still_blocks():
     f = Finding(domain=Domain.IMAGE_LANG, tool="trivy", rule_id="CVE-2021-21315",
                 severity=Severity.LOW, identifiers=frozenset({"CVE-2021-21315"}),
