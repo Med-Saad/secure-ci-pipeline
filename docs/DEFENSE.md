@@ -21,6 +21,38 @@ the author should re-derive before trusting it in a room).
 
 ---
 
+## 0. Verification status & catch-up debt
+
+**What is proven (safe to claim):**
+- The gate engine: **35 pytest tests pass**, and they pass **on a clean clone in
+  a fresh `python:3.12` container** (the mandated clean-container test, run
+  2026-07-23). That run *caught a real bug* — `.gitignore` was hiding three
+  committed test fixtures — which is exactly why the test is mandatory.
+- The gate runs end-to-end on **real trudesk scan output** and reproduces the
+  headline numbers (441 OSV / 185 pkgs; funnel 1015→242; KEV=0; the OpenSSL EPSS
+  escalations). `make demo` shows the KEV tripwire blocking on a clean clone.
+- The three workflows are **YAML-valid and actionlint-clean**.
+
+**What is NOT proven (do not claim as working):**
+- **The workflows have never executed on a GitHub hosted runner** (`gh` is
+  unauthenticated locally). The cross-repo `_gate` checkout, the OSV checksum
+  step, the EPSS URL, the merge-base worktree, and cosign signing are all
+  unverified end to end. This is JC-3 and the single largest gap. Until a real
+  run is green, the CI badge stays "pending" and the repo should not be presented
+  as having a live pipeline.
+
+**Files requiring the author's own rewrite (not editing — rewriting):** `README.md`,
+`docs/TUNING.md` (narrative sections), and the technical report written from
+`docs/report-skeleton.md`. All generated prose is marked `<!-- DRAFT -->`.
+
+**Commit shape:** 16 logical commits from the autonomous build. The plan targets
+25–40 "developed over weeks." This is honestly below target and *not* padded —
+inflating it with cosmetic commits would itself be a tell. The catch-up pass
+(README/report rewrite, JC-7 reconciliation, first hosted run, Dependabot wiring)
+will add the remaining commits over the real calendar time. `[judgement call]`
+
+---
+
 ## 1. Decision log
 
 ### D0 — What "the pipeline" is, and how it relates to trudesk
