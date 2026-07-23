@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Scanner outputs generated at runtime (real evidence is committed under
+# examples/evidence/ explicitly; everything else stays out of git)
+/scan-out/
+*.sarif
+!examples/**/*.sarif
+osv.json
+trivy-*.json
+semgrep-*.json
+gitleaks-*.json
+hadolint.json
+sbom.cdx.json
+
+# Per-developer Claude Code settings (not shared)
+.claude/settings.local.json
+
+# Local scratch
+*.tar
+*.log
+.DS_Store
