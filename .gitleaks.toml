@@ -1,0 +1,16 @@
+# Gitleaks config for this repo's own self-scan.
+# Extends the default rules and allowlists paths that intentionally contain
+# secret-shaped example strings (test fixtures, committed sample evidence). These
+# are not real secrets; without the allowlist the self-scan would block on its own
+# test data. Real secrets anywhere else in the tree are still caught.
+title = "secure-ci-pipeline gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "deliberate non-secret example strings in fixtures and committed evidence"
+paths = [
+  '''tests/fixtures/.*''',
+  '''examples/.*''',
+]

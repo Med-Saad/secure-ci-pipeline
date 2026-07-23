@@ -44,6 +44,10 @@ on:
         description: "Comma-separated paths to exclude from SAST (vendored/bundled)."
         type: string
         default: ""
+      dep-scan-excludes:
+        description: "Comma-separated directories to exclude from OSV dependency scanning (e.g. committed sample SBOMs / test fixtures that are not the repo's real supply chain)."
+        type: string
+        default: ""
       secrets-full-history:
         description: "Scan the full git history for secrets (vs. working tree only)."
         type: boolean
@@ -122,13 +126,25 @@ jobs:
       - name: Prepare output dir
         run: mkdir -p out
 
+      # NOTE ON `env:` BLOCKS BELOW. Every workflow input / github-context value
+      # used inside a `run:` script is passed through the step `env:` and read as
+      # a shell variable ("$VAR"), never interpolated as `${{ … }}` directly into
+      # the script body. Direct interpolation is the classic GitHub Actions
+      # script-injection sink (a caller-controlled input could carry `$(…)`), and
+      # Semgrep's `run-shell-injection` rule flags it. A security pipeline must not
+      # ship the very sink it scans for — this was caught by dogfooding (see
+      # docs/DEFENSE.md).
+
       # --- SAST: Semgrep (SARIF) ---------------------------------------------
       - name: Semgrep
         continue-on-error: true
+        env:
+          SEMGREP_CONFIG: ${{ inputs.semgrep-config }}
+          SAST_EXCLUDES: ${{ inputs.sast-excludes }}
         run: |
           args=(scan)
-          for c in ${{ inputs.semgrep-config }}; do args+=("--config=$c"); done
-          IFS=',' read -ra E <<< "${{ inputs.sast-excludes }}"
+          for c in $SEMGREP_CONFIG; do args+=("--config=$c"); done
+          IFS=',' read -ra E <<< "$SAST_EXCLUDES"
           for e in "${E[@]}"; do [ -n "$e" ] && args+=("--exclude=$e"); done
           semgrep "${args[@]}" --sarif --output=out/semgrep.sarif \
             --metrics=off --quiet target || true
@@ -136,16 +152,26 @@ jobs:
       # --- Dependencies: OSV-Scanner (lockfiles) -----------------------------
       - name: OSV-Scanner
         continue-on-error: true
+        env:
+          DEP_SCAN_EXCLUDES: ${{ inputs.dep-scan-excludes }}
         run: |
-          osv-scanner scan source --recursive target \
-            --format=json --output=out/osv.json || true
+          args=(scan source --recursive target)
+          IFS=',' read -ra X <<< "$DEP_SCAN_EXCLUDES"
+          for x in "${X[@]}"; do [ -n "$x" ] && args+=(--experimental-exclude "target/$x"); done
+          osv-scanner "${args[@]}" --format=json --output=out/osv.json || true
+          [ -f out/osv.json ] || echo '{"results":[]}' > out/osv.json
 
       # --- Secrets: Gitleaks (full history) ----------------------------------
       - name: Gitleaks
         continue-on-error: true
+        env:
+          SECRETS_FULL_HISTORY: ${{ inputs.secrets-full-history }}
         run: |
           args=(detect --source=/repo)
-          [ "${{ inputs.secrets-full-history }}" = "true" ] || args+=(--no-git)
+          [ "$SECRETS_FULL_HISTORY" = "true" ] || args+=(--no-git)
+          # A committed .gitleaks.toml in the target (if present) allowlists its
+          # own test fixtures; --config points at it when it exists.
+          [ -f target/.gitleaks.toml ] && args+=(--config=/repo/.gitleaks.toml)
           docker run --rm -v "$PWD/target:/repo" -v "$PWD/out:/out" \
             "${GITLEAKS_IMAGE}" "${args[@]}" \
             --report-format=json --report-path=/out/gitleaks.json --exit-code=0 || true
@@ -155,8 +181,10 @@ jobs:
       - name: Hadolint
         continue-on-error: true
         if: ${{ inputs.scan-image }}
+        env:
+          DOCKERFILE_DIR: ${{ inputs.dockerfile-dir }}
         run: |
-          df="target/${{ inputs.dockerfile-dir }}/Dockerfile"
+          df="target/$DOCKERFILE_DIR/Dockerfile"
           docker run --rm -i "${HADOLINT_IMAGE}" hadolint -f json - < "$df" \
             > out/hadolint.json || true
 
@@ -164,8 +192,10 @@ jobs:
       - name: Build and scan image
         continue-on-error: true
         if: ${{ inputs.scan-image }}
+        env:
+          DOCKERFILE_DIR: ${{ inputs.dockerfile-dir }}
         run: |
-          docker build -t scan-target:ci "target/${{ inputs.dockerfile-dir }}"
+          docker build -t scan-target:ci "target/$DOCKERFILE_DIR"
           docker save scan-target:ci -o image.tar
           docker run --rm -v "$PWD:/w" -w /w "${TRIVY_IMAGE}" image \
             --input image.tar --format json --output out/trivy-image.json --quiet || true
@@ -195,22 +225,40 @@ jobs:
       - name: Compute merge-base baseline
         if: ${{ github.event_name == 'pull_request' && !inputs.full-audit }}
         continue-on-error: true
+        env:
+          PYTHONPATH: _gate
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          SEMGREP_CONFIG: ${{ inputs.semgrep-config }}
+          SAST_EXCLUDES: ${{ inputs.sast-excludes }}
+          DEP_SCAN_EXCLUDES: ${{ inputs.dep-scan-excludes }}
         run: |
-          base="${{ github.event.pull_request.base.sha }}"
-          git -C target worktree add ../base "$base"
-          semgrep scan --config=p/default --config=p/javascript \
-            --sarif --output=out/base-semgrep.sarif --metrics=off --quiet base || true
-          osv-scanner scan source --recursive base \
-            --format=json --output=out/base-osv.json || true
+          # Scan the merge base exactly as the head was scanned (same configs and
+          # same excludes) so the fingerprints are comparable; anything that
+          # fingerprints identically on both refs is inherited debt, not new.
+          git -C target worktree add ../base "$BASE_SHA"
+          s_args=(scan)
+          for c in $SEMGREP_CONFIG; do s_args+=("--config=$c"); done
+          IFS=',' read -ra E <<< "$SAST_EXCLUDES"
+          for e in "${E[@]}"; do [ -n "$e" ] && s_args+=("--exclude=$e"); done
+          semgrep "${s_args[@]}" --sarif --output=out/base-semgrep.sarif \
+            --metrics=off --quiet base || true
+          o_args=(scan source --recursive base)
+          IFS=',' read -ra X <<< "$DEP_SCAN_EXCLUDES"
+          for x in "${X[@]}"; do [ -n "$x" ] && o_args+=(--experimental-exclude "base/$x"); done
+          osv-scanner "${o_args[@]}" --format=json --output=out/base-osv.json || true
+          [ -f out/base-osv.json ] || echo '{"results":[]}' > out/base-osv.json
           python -m gate baseline \
             --osv out/base-osv.json --semgrep out/base-semgrep.sarif \
             --out out/baseline.json || echo '{"fingerprints":[]}' > out/baseline.json
-        env:
-          PYTHONPATH: _gate
 
       # --- The gate ----------------------------------------------------------
       - name: Run ci-gate
         id: gate
+        env:
+          PYTHONPATH: _gate
+          FULL_AUDIT: ${{ inputs.full-audit }}
+          FAIL_ON_BLOCK: ${{ inputs.fail-on-block }}
+          GATE_TITLE: ${{ inputs.target-repo || github.repository }}
         run: |
           # Build the argument list explicitly so only the scanners that actually
           # produced output are passed to the gate.
@@ -222,17 +270,15 @@ jobs:
           [ -f out/hadolint.json ]    && args+=(--hadolint out/hadolint.json)
           [ -f out/epss.csv.gz ]      && args+=(--epss out/epss.csv.gz)
           [ -f out/baseline.json ]    && args+=(--baseline out/baseline.json)
-          [ "${{ inputs.full-audit }}" = "true" ]    && args+=(--full)
-          [ "${{ inputs.fail-on-block }}" = "true" ] || args+=(--no-fail)
-          args+=(--title "Security gate — ${{ inputs.target-repo || github.repository }}")
+          [ "$FULL_AUDIT" = "true" ]    && args+=(--full)
+          [ "$FAIL_ON_BLOCK" = "true" ] || args+=(--no-fail)
+          args+=(--title "Security gate — $GATE_TITLE")
           args+=(--json out/gate.json --summary out/summary.md --funnel out/funnel.csv --quiet)
           set +e
           python -m gate "${args[@]}"
           rc=$?
           cat out/summary.md >> "$GITHUB_STEP_SUMMARY"
           exit $rc
-        env:
-          PYTHONPATH: _gate
 
       # --- Always publish evidence -------------------------------------------
       - name: Upload Semgrep SARIF to code scanning

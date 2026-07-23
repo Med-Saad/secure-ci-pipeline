@@ -105,7 +105,10 @@ a surprise if mongo-express is promoted from fallback.
   Trivy 0.72.0 (via `aquasec/trivy:latest` container), jq, gh.
 - Repos cloned shallow at `~/recon/trudesk` and `~/recon/mongo-express`.
 - Built images `recon-trudesk:latest`, `recon-mongo:latest` scanned by Trivy.
-- Recon workflow: `.github/workflows/recon.yml`.
+- Recon workflow: `.github/workflows/recon.yml` — **removed after target selection**
+  (its own header instructed deletion once a target was chosen; it was a
+  deliberately tag-pinned throwaway and became a source of self-scan findings).
+  Preserved in git history; the matrix above is its output.
 
 ## Open / next
 
