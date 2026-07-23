@@ -36,3 +36,6 @@ jobs:
       secrets-full-history: false   # trudesk history is large; scan the tree
       full-audit: true              # no merge base — gate everything
       fail-on-block: false          # audit: we want the report, not a red X
+      # Measured build-only suppressions (packages not in the built image).
+      # The file lives in THIS repo, checked out at _gate/ by the reusable job.
+      suppressions-file: "_gate/examples/suppressions.trudesk.yml"

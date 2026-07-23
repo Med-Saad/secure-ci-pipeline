@@ -14,11 +14,12 @@ the script alongside its output means the numbers are reproducible, not typed.
         --target-sha 29f3f16 --outdir examples/evidence
 
 The funnel stages, in order (each a real count):
-  raw            all scanners, SAST unscoped
-  after_scoping  SAST restricted to first-party source
-  gated          report-only image-language layer set aside (overlaps deps)
-  meets_policy   severity floor / KEV / EPSS
-  blocking       after fix-availability relaxation
+  raw               all scanners, SAST unscoped
+  after_scoping     SAST restricted to first-party source
+  gated             report-only image-language layer set aside (overlaps deps)
+  after_suppression measured build-only suppressions applied (see --suppressions)
+  meets_policy      severity floor / KEV / EPSS
+  blocking          after fix-availability relaxation
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ from gate.epss import EpssScores
 from gate.kev import KevCatalog
 from gate.models import Decision, Domain
 from gate.policy import Policy
+from gate.suppress import load_suppressions
 from gate.report import to_markdown
 from scripts.plot_funnel import render_svg  # noqa: E402
 
@@ -50,6 +52,7 @@ def main() -> int:
     ap.add_argument("--semgrep-scoped", required=True)
     ap.add_argument("--kev", required=True)
     ap.add_argument("--epss", required=True)
+    ap.add_argument("--suppressions", default=None)
     ap.add_argument("--target-sha", default="unknown")
     ap.add_argument("--target-repo", default="polonel/trudesk")
     ap.add_argument("--outdir", default="examples/evidence")
@@ -61,6 +64,7 @@ def main() -> int:
     sast_scoped = adapters.load("semgrep", a.semgrep_scoped)
     kev = KevCatalog.from_file(a.kev)
     epss = EpssScores.from_file(a.epss)
+    suppressions = load_suppressions(a.suppressions)
 
     # Sanitise the scanning machine's absolute paths out of committed evidence so
     # the sample is portable and leaks no local filesystem layout.
@@ -75,18 +79,23 @@ def main() -> int:
     trivy_os = [f for f in trivy if f.domain is Domain.IMAGE_OS]
     trivy_lang = [f for f in trivy if f.domain is Domain.IMAGE_LANG]
 
-    # The authoritative gate run: full audit over the scoped, real inputs.
+    # The authoritative gate run: full audit over the scoped, real inputs, with
+    # the measured build-only suppressions applied.
     gated_input = osv + trivy + sast_scoped
-    result = evaluate(gated_input, Policy(delta_enabled=False), kev, epss, [],
-                      Baseline.empty(), today=date.today())
+    result = evaluate(gated_input, Policy(delta_enabled=False), kev, epss,
+                      suppressions, Baseline.empty(), today=date.today())
 
     n_block = result.funnel["blocking"]
     n_meets = result.funnel["meets_policy"]
-
+    n_supp = result.funnel["suppressed"]
+    n_gated = len(osv) + len(trivy_os) + len(sast_scoped)
+    # Suppressions only touch gated domains here (deps), so subtract them from the
+    # gated count for the funnel's suppression stage.
     funnel = [
         ("raw", len(osv) + len(trivy) + len(sast_unscoped)),
         ("after_scoping", len(osv) + len(trivy) + len(sast_scoped)),
-        ("gated", len(osv) + len(trivy_os) + len(sast_scoped)),
+        ("gated", n_gated),
+        ("after_suppression", n_gated - n_supp),
         ("meets_policy", n_meets),
         ("blocking", n_block),
     ]
@@ -133,6 +142,11 @@ def main() -> int:
         "by_domain": by_dom,
         "kev_total_on_target": result.funnel["kev_total"],
         "epss_escalated_blocks": kev_escalations,
+        "suppressed_count": result.funnel["suppressed"],
+        "suppression_basis": (
+            "build-only packages absent from the built image (measured vs. Trivy "
+            "image scan); see examples/suppressions.trudesk.yml"
+        ) if suppressions else None,
         "blocked": result.blocked,
     }
     (outdir / "scan-manifest.json").write_text(json.dumps(manifest, indent=2))

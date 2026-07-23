@@ -1,29 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 368" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="trudesk triage funnel — 1015 raw findings to 242 blocking">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 426" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-label="trudesk triage funnel — 1015 raw findings to 209 blocking">
 <style>:root{--ink:#1a1a1a;--muted:#666;--track:#e8e8ec}@media (prefers-color-scheme:dark){:root{--ink:#e8e8e8;--muted:#9aa0a6;--track:#2a2d31}}.ink{fill:var(--ink)}.muted{fill:var(--muted)}.track{fill:var(--track)}</style>
-<text x="300" y="34" class="ink" font-size="19" font-weight="600">trudesk triage funnel — 1015 raw findings to 242 blocking</text>
+<text x="300" y="34" class="ink" font-size="19" font-weight="600">trudesk triage funnel — 1015 raw findings to 209 blocking</text>
 <text x="286" y="88.0" text-anchor="end" class="ink" font-size="15">Raw findings</text>
 <rect x="300" y="60" width="510" height="46" rx="5" class="track" opacity="0.5"/>
-<rect x="300" y="60" width="510" height="46" rx="5" fill="#9ecae1"><title>Raw findings: 1015 (100% of raw)</title></rect>
+<rect x="300" y="60" width="510" height="46" rx="5" fill="#c6dbef"><title>Raw findings: 1015 (100% of raw)</title></rect>
 <text x="822" y="81.0" class="ink" font-size="16" font-weight="600">1015</text>
 <text x="822" y="98.0" class="muted" font-size="11">100% of raw</text>
 <text x="286" y="146.0" text-anchor="end" class="ink" font-size="15">After scoping (first-party SAST)</text>
 <rect x="300" y="118" width="510" height="46" rx="5" class="track" opacity="0.5"/>
-<rect x="300" y="118" width="489" height="46" rx="5" fill="#6baed6"><title>After scoping (first-party SAST): 974 (96% of raw)</title></rect>
+<rect x="300" y="118" width="489" height="46" rx="5" fill="#9ecae1"><title>After scoping (first-party SAST): 974 (96% of raw)</title></rect>
 <text x="801" y="139.0" class="ink" font-size="16" font-weight="600">974</text>
 <text x="801" y="156.0" class="muted" font-size="11">96% of raw</text>
 <text x="286" y="204.0" text-anchor="end" class="ink" font-size="15">Gated layers (image-lang set aside)</text>
 <rect x="300" y="176" width="510" height="46" rx="5" class="track" opacity="0.5"/>
-<rect x="300" y="176" width="287" height="46" rx="5" fill="#4292c6"><title>Gated layers (image-lang set aside): 572 (56% of raw)</title></rect>
+<rect x="300" y="176" width="287" height="46" rx="5" fill="#6baed6"><title>Gated layers (image-lang set aside): 572 (56% of raw)</title></rect>
 <text x="599" y="197.0" class="ink" font-size="16" font-weight="600">572</text>
 <text x="599" y="214.0" class="muted" font-size="11">56% of raw</text>
-<text x="286" y="262.0" text-anchor="end" class="ink" font-size="15">Meets policy (floor / KEV / EPSS)</text>
+<text x="286" y="262.0" text-anchor="end" class="ink" font-size="15">After suppression (build-only)</text>
 <rect x="300" y="234" width="510" height="46" rx="5" class="track" opacity="0.5"/>
-<rect x="300" y="234" width="122" height="46" rx="5" fill="#2171b5"><title>Meets policy (floor / KEV / EPSS): 243 (24% of raw)</title></rect>
-<text x="434" y="255.0" class="ink" font-size="16" font-weight="600">243</text>
-<text x="434" y="272.0" class="muted" font-size="11">24% of raw</text>
-<text x="286" y="320.0" text-anchor="end" class="ink" font-size="15">Blocking</text>
+<rect x="300" y="234" width="265" height="46" rx="5" fill="#4292c6"><title>After suppression (build-only): 527 (52% of raw)</title></rect>
+<text x="577" y="255.0" class="ink" font-size="16" font-weight="600">527</text>
+<text x="577" y="272.0" class="muted" font-size="11">52% of raw</text>
+<text x="286" y="320.0" text-anchor="end" class="ink" font-size="15">Meets policy (floor / KEV / EPSS)</text>
 <rect x="300" y="292" width="510" height="46" rx="5" class="track" opacity="0.5"/>
-<rect x="300" y="292" width="122" height="46" rx="5" fill="#08519c"><title>Blocking: 242 (24% of raw)</title></rect>
-<text x="434" y="313.0" class="ink" font-size="16" font-weight="600">242</text>
-<text x="434" y="330.0" class="muted" font-size="11">24% of raw</text>
+<rect x="300" y="292" width="106" height="46" rx="5" fill="#2171b5"><title>Meets policy (floor / KEV / EPSS): 210 (21% of raw)</title></rect>
+<text x="418" y="313.0" class="ink" font-size="16" font-weight="600">210</text>
+<text x="418" y="330.0" class="muted" font-size="11">21% of raw</text>
+<text x="286" y="378.0" text-anchor="end" class="ink" font-size="15">Blocking</text>
+<rect x="300" y="350" width="510" height="46" rx="5" class="track" opacity="0.5"/>
+<rect x="300" y="350" width="105" height="46" rx="5" fill="#08519c"><title>Blocking: 209 (21% of raw)</title></rect>
+<text x="417" y="371.0" class="ink" font-size="16" font-weight="600">209</text>
+<text x="417" y="388.0" class="muted" font-size="11">21% of raw</text>
 </svg>

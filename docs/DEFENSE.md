@@ -189,28 +189,61 @@ can never reach the OIDC token that keyless signing uses.
 
 ## 2. Suppression register
 
-_(populated as suppressions are added; every entry carries file:line, the
-surrounding code, and a confidence label — see TUNING.md for the narrative)_
+_Every finding that met the policy was triaged. Two dispositions were used:
+**fix** (for findings in our own code) and **suppress** (only where the
+non-applicability is *measured*, not guessed). Nothing was silently muted._
 
-**The authoritative trudesk audit applies ZERO suppressions** (TUNING.md §6). This
-is deliberate: a suppression is a semantic claim about the target's code, and
-verifying trudesk internals well enough to make those claims safely is out of
-autonomous scope. A confident-but-wrong suppression is the worst failure mode of
-this working mode, so none were written against the real target.
+### 2a. Self-scan findings — FIXED, not suppressed (highest-value triage)
 
-The two entries below live in `examples/suppressions.example.yml` and are
-**illustrative only** — they exercise the mechanism and document the format; they
-are not applied to any real scan.
+The first real CI run's self-scan surfaced 7 HIGH `run-shell-injection` findings
+**in our own workflow YAML** — the pipeline caught a real vulnerability in itself.
+The correct disposition for a finding in code you own is to *fix* it, not suppress
+it. All 7 are fixed (commit "Fix self-scan pollution and harden workflows").
 
-| id | target | reason (abridged) | confidence | applied? |
+| finding | file:line (pre-fix) | the code | why it was real | disposition |
 |---|---|---|---|---|
-| SUP-EXAMPLE-1 | `deps` pkg `some-dev-only-package` | dev-only build tool, stripped from prod image | `[low]` — needs dep-graph + image verification | no (example) |
-| SUP-EXAMPLE-2 | `sast` under `third_party/**` | vendored code owned upstream | `[medium]` scoping / `[low]` per-line | no (example) |
+| `run-shell-injection` ×5 | `security-scan.yml` :128/146/158/167/214 | `${{ inputs.semgrep-config }}`, `${{ inputs.sast-excludes }}`, `${{ inputs.full-audit }}`, `${{ inputs.dockerfile-dir }}` interpolated directly into `run:` | a caller-controlled input carrying `$(…)`/backticks would execute in the runner shell — the canonical Actions script-injection sink | **fixed**: values routed through step `env:` and read as `"$VAR"` |
+| `run-shell-injection` ×2 | `recon.yml` :54/156 | `${{ matrix.repo }}`, `${{ inputs.candidates }}` in `run:` | same sink | **fixed by removal**: recon.yml was a throwaway (its header said to delete post-selection) |
 
-**Judgement call:** if a real user *does* need to suppress a trudesk finding, the
-register must gain a real entry with the surrounding code quoted and a confidence
-label — that is the audit trail, and it is intentionally empty right now rather
-than filled with guesses.
+The remaining self-scan findings were `github-actions-mutable-action-tag`
+(MEDIUM, below floor → report-only) on recon.yml — removed with the file.
+After the fixes, the self-scan is **0 blocking** (dependency-free repo, hardened
+workflows). `[measured]` — Semgrep now returns 0 on our code.
+
+### 2b. trudesk target audit — SUPPRESSED on a measured basis
+
+The trudesk audit applies **19 suppressions** covering 33 HIGH+ dependency
+findings (`examples/suppressions.trudesk.yml`). Basis: each package carries HIGH+
+advisories in the source `yarn.lock` **but is absent from the built container
+image** (cross-referenced against the Trivy image scan). A vuln in a package not
+present in the deployed artifact is **not runtime-reachable in production**.
+
+**Confidence: `[measured / high]`** that these are not *runtime* reachable — the
+built image is the evidence, not an inference about trudesk internals.
+**Narrow-scope caveat (stated on every entry):** this does NOT claim they are
+harmless. A compromised *build-time* dependency (e.g. `terser`, `webpack`,
+`@babel/*`, `snyk`) is a real supply-chain threat — just a different one than a
+runtime CVE. These suppressions lift the *runtime severity gate* only.
+
+The 19 packages (all build/dev tooling, verified absent from the image):
+`@angular/compiler`, `@babel/plugin-transform-modules-systemjs`,
+`@babel/traverse`, `dot-prop`, `flatted`, `get-func-name`, `hoek`, `json5`,
+`loader-utils`, `pathval`, `serialize-javascript`, `shelljs`, `snyk`, `terser`,
+`tmp`, `trim`, `webpack`, `websocket-driver`, `websocket-extensions`.
+
+**Effect on the funnel:** 242 → **209 blocking** (33 build-only findings
+suppressed). The remaining 195 HIGH+ dep findings are in packages that DO ship in
+the image and are correctly still blocked — those need upgrades, not suppression.
+
+**Judgement call (JC-8):** the "absent from image" test is strong but not
+absolute — a package could ship under a renamed path, or its output could be
+bundled into shipped code (terser minifies code that IS shipped, though terser
+itself is not). The claim is deliberately narrow ("not runtime-reachable as a
+package"); the author should spot-check two or three before relying on it in a
+room. `[measured basis, narrow claim]`
+
+The entries in `examples/suppressions.example.yml` remain as **format
+documentation** (illustrative, not applied).
 
 ---
 

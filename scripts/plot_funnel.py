@@ -19,12 +19,13 @@ STAGE_LABELS = {
     "raw": "Raw findings",
     "after_scoping": "After scoping (first-party SAST)",
     "gated": "Gated layers (image-lang set aside)",
+    "after_suppression": "After suppression (build-only)",
     "meets_policy": "Meets policy (floor / KEV / EPSS)",
     "blocking": "Blocking",
 }
 
-# Single-hue sequential blue ramp, light -> dark, 5 steps.
-RAMP = ["#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c"]
+# Single-hue sequential blue ramp, light -> dark, 6 steps.
+RAMP = ["#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c"]
 
 
 def render_svg(funnel: list[tuple[str, int]], out_path: str | Path, title: str = "") -> None:

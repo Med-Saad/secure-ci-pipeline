@@ -19,9 +19,10 @@ scores.
 ## Demo — the triage funnel
 
 Run against a real, stale target (`polonel/trudesk`, 2402 packages), the gate
-takes **1015 raw findings down to 242 blocking** — and blocks a MEDIUM-rated
+takes **1015 raw findings down to 209 blocking** — suppressing 33 findings in
+build-only packages (measured absent from the image), blocking a MEDIUM-rated
 OpenSSL CVE that a severity floor would miss, while *not* blocking on 233
-Critical/High advisories that are inherited debt with zero known exploitation.
+Critical/High advisories that carry zero known exploitation.
 
 ![triage funnel](docs/figures/triage-funnel.svg)
 
@@ -105,7 +106,8 @@ Details and rejected alternatives: **[docs/DEFENSE.md](docs/DEFENSE.md)**.
 
 | Metric | Value |
 |---|---|
-| Raw findings → blocking | 1015 → **242** |
+| Raw findings → blocking | 1015 → **209** |
+| Measured build-only suppressions | 19 packages / 33 findings (absent from image) |
 | CISA KEV matches on target | **0** (of 233 Critical/High) |
 | EPSS-escalated below-floor blocks | 4 (OpenSSL; CVE-2023-2650 @ EPSS 0.751) |
 | SAST scoping | 149 → 108 (first-party only) |

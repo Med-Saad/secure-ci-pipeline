@@ -44,3 +44,19 @@ def test_json_suppression_needs_no_yaml(tmp_path):
 def test_missing_file_is_empty():
     assert load_suppressions(None) == []
     assert load_suppressions("/nonexistent/path.yml") == []
+
+
+def test_committed_example_and_trudesk_suppressions_are_valid():
+    """The committed suppression files must always parse (a bare @scoped package
+    name is a YAML token and must be quoted — this guards that regression)."""
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    ex = load_suppressions(root / "examples" / "suppressions.example.yml")
+    assert len(ex) == 2
+    tru = load_suppressions(root / "examples" / "suppressions.trudesk.yml")
+    assert len(tru) == 19
+    # every entry has a reason and a concrete match (never an empty match)
+    for s in tru:
+        assert s.reason and s.package and s.domain is not None
+    # the @scoped names round-trip
+    assert any(s.package == "@angular/compiler" for s in tru)

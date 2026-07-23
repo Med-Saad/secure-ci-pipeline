@@ -1,0 +1,166 @@
+# Real suppression file for the trudesk TARGET audit (used by target-scan).
+# Basis: MEASURED, not inferred. Each package below carries HIGH+ advisories in
+# the source yarn.lock but is ABSENT from the built container image (compared
+# against the Trivy image scan). A vulnerability in a package that is not present
+# in the deployed artifact is not reachable at runtime in production.
+#
+# Confidence: HIGH that these are not RUNTIME-reachable (the image is the
+# evidence). NOTE the narrow scope: this does NOT claim they are harmless — a
+# compromised BUILD-time dependency is a real supply-chain threat, just a
+# different one than a runtime CVE. These block the runtime severity gate only.
+#
+# All entries expire (annual re-review); an expired suppression re-surfaces.
+# Regenerate: cross-reference OSV source deps vs. Trivy image packages.
+suppressions:
+  - id: SUP-BUILD-angular-compiler
+    reason: >
+      @angular/compiler: 2 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-jrmj-c5cx-3cw6, GHSA-v4hv-rgfq-gp49
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "@angular/compiler"
+  - id: SUP-BUILD-babel-plugin-transform-modules-systemjs
+    reason: >
+      @babel/plugin-transform-modules-systemjs: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-fv7c-fp4j-7gwp
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "@babel/plugin-transform-modules-systemjs"
+  - id: SUP-BUILD-babel-traverse
+    reason: >
+      @babel/traverse: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-67hx-6x53-jw92
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "@babel/traverse"
+  - id: SUP-BUILD-dot-prop
+    reason: >
+      dot-prop: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-ff7x-qrg7-qggm
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "dot-prop"
+  - id: SUP-BUILD-flatted
+    reason: >
+      flatted: 2 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-25h7-pfq9-p65f, GHSA-rf6f-7fwh-wjgh
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "flatted"
+  - id: SUP-BUILD-get-func-name
+    reason: >
+      get-func-name: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-4q6p-r6v2-jvc5
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "get-func-name"
+  - id: SUP-BUILD-hoek
+    reason: >
+      hoek: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-c429-5p7v-vgjp
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "hoek"
+  - id: SUP-BUILD-json5
+    reason: >
+      json5: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-9c47-m6qq-7p4h
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "json5"
+  - id: SUP-BUILD-loader-utils
+    reason: >
+      loader-utils: 3 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-3rfm-jhwj-7488, GHSA-76p3-8jx3-jpfq, GHSA-hhq3-ff78-jv3g
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "loader-utils"
+  - id: SUP-BUILD-pathval
+    reason: >
+      pathval: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-g6ww-v8xp-vmwg
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "pathval"
+  - id: SUP-BUILD-serialize-javascript
+    reason: >
+      serialize-javascript: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-5c6j-r48x-rmvq
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "serialize-javascript"
+  - id: SUP-BUILD-shelljs
+    reason: >
+      shelljs: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-4rq4-32rv-6wp6
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "shelljs"
+  - id: SUP-BUILD-snyk
+    reason: >
+      snyk: 2 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-4vrv-93c7-m92j, GHSA-hpqj-7cj6-hfj8
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "snyk"
+  - id: SUP-BUILD-terser
+    reason: >
+      terser: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-4wf5-vphf-c2xc
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "terser"
+  - id: SUP-BUILD-tmp
+    reason: >
+      tmp: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-ph9p-34f9-6g65
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "tmp"
+  - id: SUP-BUILD-trim
+    reason: >
+      trim: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-w5p7-h5w8-2hfq
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "trim"
+  - id: SUP-BUILD-webpack
+    reason: >
+      webpack: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-hc6q-2mpp-qw7j
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "webpack"
+  - id: SUP-BUILD-websocket-driver
+    reason: >
+      websocket-driver: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-xv26-6w52-cph6
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "websocket-driver"
+  - id: SUP-BUILD-websocket-extensions
+    reason: >
+      websocket-extensions: 1 HIGH+ advisory(ies) in yarn.lock, absent from the built
+      image (build-time tooling); not runtime-reachable. Advisories: GHSA-g78m-2chm-r7qv
+    expires: "2027-07-23"
+    match:
+      domain: deps
+      package: "websocket-extensions"

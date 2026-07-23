@@ -5,12 +5,12 @@
 | stage | count |
 |---|---:|
 | Raw findings | 974 |
-| After suppression | 974 |
-| New vs. merge base | 974 |
-| Meets policy | 243 |
-| **Blocking** | 242 |
+| After suppression | 929 |
+| New vs. merge base | 929 |
+| Meets policy | 210 |
+| **Blocking** | 209 |
 
-_reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
+_reported (non-blocking): 720 · suppressed: 45 · inherited: 0 · KEV blocks: 0_
 
 ### Blocking findings
 
@@ -22,11 +22,6 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | Critical | deps | `GHSA-2w6w-674q-4c4q` | trudesk/yarn.lock:handlebars@4.7.7 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-4g88-fppr-53pp` | trudesk/yarn.lock:set-value@0.4.3 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-4g88-fppr-53pp` | trudesk/yarn.lock:set-value@2.0.0 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-67hx-6x53-jw92` | trudesk/yarn.lock:@babel/traverse@7.17.3 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-67hx-6x53-jw92` | trudesk/yarn.lock:@babel/traverse@7.17.9 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-67hx-6x53-jw92` | trudesk/yarn.lock:@babel/traverse@7.18.6 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-67hx-6x53-jw92` | trudesk/yarn.lock:@babel/traverse@7.2.3 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-76p3-8jx3-jpfq` | trudesk/yarn.lock:loader-utils@2.0.2 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-896r-f27r-55mw` | trudesk/yarn.lock:json-schema@0.2.3 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-9m93-w8w6-76hh` | trudesk/yarn.lock:mongoose@6.4.3 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-fhjf-83wg-r2j9` | trudesk/yarn.lock:mixin-deep@1.3.1 | Critical >= High floor, fix available |
@@ -34,11 +29,9 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | Critical | deps | `GHSA-fjxv-7rqg-78g4` | trudesk/yarn.lock:form-data@4.0.0 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-gx6r-qc2v-3p3v` | trudesk/yarn.lock:systeminformation@5.7.7 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-h8hf-x3f4-xwgp` | trudesk/yarn.lock:mongoose@6.4.3 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-hc6q-2mpp-qw7j` | trudesk/yarn.lock:webpack@5.73.0 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-jf85-cpcp-j695` | trudesk/yarn.lock:lodash@3.7.0 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-jf85-cpcp-j695` | trudesk/yarn.lock:lodash@4.17.11 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-vg7j-7cwx-8wgw` | trudesk/yarn.lock:mongoose@6.4.3 | Critical >= High floor, fix available |
-| Critical | deps | `GHSA-xv26-6w52-cph6` | trudesk/yarn.lock:websocket-driver@0.7.0 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-xvch-5gv4-984h` | trudesk/yarn.lock:minimist@0.0.8 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-xvch-5gv4-984h` | trudesk/yarn.lock:minimist@1.2.0 | Critical >= High floor, fix available |
 | Critical | deps | `GHSA-xvch-5gv4-984h` | trudesk/yarn.lock:minimist@1.2.5 | Critical >= High floor, fix available |
@@ -60,8 +53,6 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-23c5-xmqv-rm74` | trudesk/yarn.lock:minimatch@3.1.2 | High >= High floor, fix available |
 | High | deps | `GHSA-23c5-xmqv-rm74` | trudesk/yarn.lock:minimatch@5.0.1 | High >= High floor, fix available |
 | High | deps | `GHSA-23c5-xmqv-rm74` | trudesk/yarn.lock:minimatch@5.1.0 | High >= High floor, fix available |
-| High | deps | `GHSA-25h7-pfq9-p65f` | trudesk/yarn.lock:flatted@2.0.2 | High >= High floor, fix available |
-| High | deps | `GHSA-25h7-pfq9-p65f` | trudesk/yarn.lock:flatted@3.2.5 | High >= High floor, fix available |
 | High | deps | `GHSA-34x7-hfp2-rc4v` | trudesk/yarn.lock:tar@6.1.0 | High >= High floor, fix available |
 | High | deps | `GHSA-34x7-hfp2-rc4v` | trudesk/yarn.lock:tar@6.1.11 | High >= High floor, fix available |
 | High | deps | `GHSA-35jh-r3h4-6jhm` | trudesk/yarn.lock:lodash@3.7.0 | High >= High floor (EPSS 0.224 also over threshold) |
@@ -83,23 +74,16 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-3ppc-4f35-3m26` | trudesk/yarn.lock:minimatch@3.1.2 | High >= High floor, fix available |
 | High | deps | `GHSA-3ppc-4f35-3m26` | trudesk/yarn.lock:minimatch@5.0.1 | High >= High floor, fix available |
 | High | deps | `GHSA-3ppc-4f35-3m26` | trudesk/yarn.lock:minimatch@5.1.0 | High >= High floor, fix available |
-| High | deps | `GHSA-3rfm-jhwj-7488` | trudesk/yarn.lock:loader-utils@2.0.2 | High >= High floor, fix available |
 | High | deps | `GHSA-3xgq-45jj-v275` | trudesk/yarn.lock:cross-spawn@6.0.5 | High >= High floor, fix available |
 | High | deps | `GHSA-3xgq-45jj-v275` | trudesk/yarn.lock:cross-spawn@7.0.3 | High >= High floor, fix available |
 | High | deps | `GHSA-43fc-jf86-j433` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
 | High | deps | `GHSA-43fc-jf86-j433` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
 | High | deps | `GHSA-4jqc-8m5r-9rpr` | trudesk/yarn.lock:set-value@0.4.3 | High >= High floor, fix available |
 | High | deps | `GHSA-4jqc-8m5r-9rpr` | trudesk/yarn.lock:set-value@2.0.0 | High >= High floor, fix available |
-| High | deps | `GHSA-4q6p-r6v2-jvc5` | trudesk/yarn.lock:get-func-name@2.0.0 | High >= High floor, fix available |
-| High | deps | `GHSA-4rq4-32rv-6wp6` | trudesk/yarn.lock:shelljs@0.3.0 | High >= High floor, fix available |
-| High | deps | `GHSA-4vrv-93c7-m92j` | trudesk/yarn.lock:snyk@1.965.0 | High >= High floor, fix available |
-| High | deps | `GHSA-4wf5-vphf-c2xc` | trudesk/yarn.lock:terser@5.10.0 | High >= High floor, fix available |
-| High | deps | `GHSA-4wf5-vphf-c2xc` | trudesk/yarn.lock:terser@5.14.1 | High >= High floor, fix available |
 | High | deps | `GHSA-4xc9-xhrj-v574` | trudesk/yarn.lock:lodash@3.7.0 | High >= High floor, fix available |
 | High | deps | `GHSA-52cp-r559-cp3m` | trudesk/yarn.lock:js-yaml@3.14.1 | High >= High floor, fix available |
 | High | deps | `GHSA-52cp-r559-cp3m` | trudesk/yarn.lock:js-yaml@4.1.0 | High >= High floor, fix available |
 | High | deps | `GHSA-5955-9wpr-37jh` | trudesk/yarn.lock:tar@6.1.0 | High >= High floor, fix available |
-| High | deps | `GHSA-5c6j-r48x-rmvq` | trudesk/yarn.lock:serialize-javascript@6.0.0 | High >= High floor, fix available |
 | High | deps | `GHSA-5vv4-hvf7-2h46` | trudesk/yarn.lock:systeminformation@5.7.7 | High >= High floor, fix available |
 | High | deps | `GHSA-5xpp-75jx-m839` | trudesk/yarn.lock:systeminformation@5.7.7 | High >= High floor, fix available |
 | High | deps | `GHSA-677m-j7p3-52f9` | trudesk/yarn.lock:socket.io-parser@4.2.1 | High >= High floor, fix available |
@@ -137,9 +121,6 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-96hv-2xvq-fx4p` | trudesk/yarn.lock:ws@7.4.6 | High >= High floor, fix available |
 | High | deps | `GHSA-96hv-2xvq-fx4p` | trudesk/yarn.lock:ws@7.5.7 | High >= High floor, fix available |
 | High | deps | `GHSA-96hv-2xvq-fx4p` | trudesk/yarn.lock:ws@8.2.3 | High >= High floor, fix available |
-| High | deps | `GHSA-9c47-m6qq-7p4h` | trudesk/yarn.lock:json5@1.0.1 | High >= High floor, fix available |
-| High | deps | `GHSA-9c47-m6qq-7p4h` | trudesk/yarn.lock:json5@2.2.0 | High >= High floor, fix available |
-| High | deps | `GHSA-9c47-m6qq-7p4h` | trudesk/yarn.lock:json5@2.2.1 | High >= High floor, fix available |
 | High | deps | `GHSA-9c88-49p5-5ggf` | trudesk/yarn.lock:systeminformation@5.7.7 | High >= High floor, fix available |
 | High | deps | `GHSA-9cx6-37pm-9jff` | trudesk/yarn.lock:handlebars@4.7.7 | High >= High floor, fix available |
 | High | deps | `GHSA-9j49-mfvp-vmhm` | trudesk/yarn.lock:degenerator@2.2.0 | High >= High floor, fix available |
@@ -158,8 +139,6 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-c2qf-rxjj-qqgw` | trudesk/yarn.lock:semver@7.2.3 | High >= High floor, fix available |
 | High | deps | `GHSA-c2qf-rxjj-qqgw` | trudesk/yarn.lock:semver@7.3.5 | High >= High floor, fix available |
 | High | deps | `GHSA-c2qf-rxjj-qqgw` | trudesk/yarn.lock:semver@7.3.7 | High >= High floor, fix available |
-| High | deps | `GHSA-c429-5p7v-vgjp` | trudesk/yarn.lock:hoek@5.0.4 | High >= High floor, fix available |
-| High | deps | `GHSA-c429-5p7v-vgjp` | trudesk/yarn.lock:hoek@6.1.2 | High >= High floor, fix available |
 | High | deps | `GHSA-cgfm-xwp7-2cvr` | trudesk/yarn.lock:sanitize-html@2.7.0 | High >= High floor, fix available |
 | High | deps | `GHSA-cph5-m8f7-6c5x` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
 | High | deps | `GHSA-cvv5-9h9w-qp2m` | trudesk/yarn.lock:systeminformation@5.7.7 | High >= High floor, fix available |
@@ -168,22 +147,16 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-f8q6-p94x-37v3` | trudesk/yarn.lock:minimatch@2.0.10 | High >= High floor, fix available |
 | High | deps | `GHSA-f8q6-p94x-37v3` | trudesk/yarn.lock:minimatch@3.0.4 | High >= High floor, fix available |
 | High | deps | `GHSA-f9xv-q969-pqx4` | trudesk/yarn.lock:yaml@2.1.1 | High >= High floor, fix available |
-| High | deps | `GHSA-ff7x-qrg7-qggm` | trudesk/yarn.lock:dot-prop@3.0.0 | High >= High floor, fix available |
-| High | deps | `GHSA-fv7c-fp4j-7gwp` | …yarn.lock:@babel/plugin-transform-modules-systemjs@7.18.6 | High >= High floor, fix available |
 | High | deps | `GHSA-fwr7-v2mv-hh25` | trudesk/yarn.lock:async@2.6.1 | High >= High floor, fix available |
 | High | deps | `GHSA-fwr7-v2mv-hh25` | trudesk/yarn.lock:async@2.6.3 | High >= High floor, fix available |
 | High | deps | `GHSA-fwr7-v2mv-hh25` | trudesk/yarn.lock:async@3.2.0 | High >= High floor, fix available |
-| High | deps | `GHSA-g6ww-v8xp-vmwg` | trudesk/yarn.lock:pathval@1.1.0 | High >= High floor, fix available |
-| High | deps | `GHSA-g78m-2chm-r7qv` | trudesk/yarn.lock:websocket-extensions@0.1.3 | High >= High floor, fix available |
 | High | deps | `GHSA-grv7-fg5c-xmjg` | trudesk/yarn.lock:braces@2.3.2 | High >= High floor, fix available |
 | High | deps | `GHSA-grv7-fg5c-xmjg` | trudesk/yarn.lock:braces@3.0.2 | High >= High floor, fix available |
 | High | deps | `GHSA-hfxv-24rg-xrqf` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
 | High | deps | `GHSA-hfxv-24rg-xrqf` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
-| High | deps | `GHSA-hhq3-ff78-jv3g` | trudesk/yarn.lock:loader-utils@2.0.2 | High >= High floor, fix available |
 | High | deps | `GHSA-hj9c-8jmm-8c52` | trudesk/yarn.lock:npm@8.5.0 | High >= High floor, fix available |
 | High | deps | `GHSA-hmw2-7cc7-3qxx` | trudesk/yarn.lock:form-data@2.3.3 | High >= High floor, fix available |
 | High | deps | `GHSA-hmw2-7cc7-3qxx` | trudesk/yarn.lock:form-data@4.0.0 | High >= High floor, fix available |
-| High | deps | `GHSA-hpqj-7cj6-hfj8` | trudesk/yarn.lock:snyk@1.965.0 | High >= High floor, fix available |
 | High | deps | `GHSA-hrpp-h998-j3pp` | trudesk/yarn.lock:qs@6.5.2 | High >= High floor (EPSS 0.147 also over threshold) |
 | High | deps | `GHSA-hrpp-h998-j3pp` | trudesk/yarn.lock:qs@6.6.0 | High >= High floor (EPSS 0.147 also over threshold) |
 | High | deps | `GHSA-hrpp-h998-j3pp` | trudesk/yarn.lock:qs@6.9.3 | High >= High floor (EPSS 0.147 also over threshold) |
@@ -194,7 +167,6 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-j5f8-grm9-p9fc` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
 | High | deps | `GHSA-jr5f-v2jv-69x6` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
 | High | deps | `GHSA-jr5f-v2jv-69x6` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
-| High | deps | `GHSA-jrmj-c5cx-3cw6` | trudesk/yarn.lock:@angular/compiler@8.2.14 | High >= High floor, fix available |
 | High | deps | `GHSA-m7xq-9374-9rvx` | trudesk/yarn.lock:mongoose@6.4.3 | High >= High floor, fix available |
 | High | deps | `GHSA-p6gq-j5cr-w38f` | trudesk/yarn.lock:nodemailer@6.7.0 | High >= High floor, fix available |
 | High | deps | `GHSA-p6gq-j5cr-w38f` | trudesk/yarn.lock:nodemailer@6.7.2 | High >= High floor, fix available |
@@ -206,7 +178,6 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-p92q-9vqr-4j8v` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
 | High | deps | `GHSA-pf86-5x62-jrwf` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
 | High | deps | `GHSA-pf86-5x62-jrwf` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
-| High | deps | `GHSA-ph9p-34f9-6g65` | trudesk/yarn.lock:tmp@0.0.33 | High >= High floor, fix available |
 | High | deps | `GHSA-pjwm-pj3p-43mv` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
 | High | deps | `GHSA-pjwm-pj3p-43mv` | trudesk/yarn.lock:axios@0.27.2 | High >= High floor, fix available |
 | High | deps | `GHSA-pmwg-cvhr-8vh7` | trudesk/yarn.lock:axios@0.21.1 | High >= High floor, fix available |
@@ -229,19 +200,15 @@ _reported (non-blocking): 732 · suppressed: 0 · inherited: 0 · KEV blocks: 0_
 | High | deps | `GHSA-rcmh-qjqh-p98v` | trudesk/yarn.lock:nodemailer@6.7.2 | High >= High floor, fix available |
 | High | deps | `GHSA-rcmh-qjqh-p98v` | trudesk/yarn.lock:nodemailer@6.7.3 | High >= High floor, fix available |
 | High | deps | `GHSA-rcmh-qjqh-p98v` | trudesk/yarn.lock:nodemailer@6.7.7 | High >= High floor, fix available |
-| High | deps | `GHSA-rf6f-7fwh-wjgh` | trudesk/yarn.lock:flatted@2.0.2 | High >= High floor, fix available |
-| High | deps | `GHSA-rf6f-7fwh-wjgh` | trudesk/yarn.lock:flatted@3.2.5 | High >= High floor, fix available |
 | High | deps | `GHSA-rhx6-c78j-4q9w` | trudesk/yarn.lock:path-to-regexp@0.1.7 | High >= High floor, fix available |
 | High | deps | `GHSA-v245-v573-v5vm` | trudesk/yarn.lock:linkify-it@3.0.3 | High >= High floor, fix available |
 | High | deps | `GHSA-v245-v573-v5vm` | trudesk/yarn.lock:linkify-it@4.0.0 | High >= High floor, fix available |
-| High | deps | `GHSA-v4hv-rgfq-gp49` | trudesk/yarn.lock:@angular/compiler@8.2.14 | High >= High floor, fix available |
 | High | deps | `GHSA-v56q-mh7h-f735` | trudesk/yarn.lock:immutable@4.1.0 | High >= High floor, fix available |
 | High | deps | `GHSA-v56q-mh7h-f735` | trudesk/yarn.lock:immutable@4.3.0 | High >= High floor, fix available |
 | High | deps | `GHSA-v9p9-hfj2-hcw8` | trudesk/yarn.lock:undici@5.6.0 | High >= High floor, fix available |
 | High | deps | `GHSA-vrm6-8vpv-qv8q` | trudesk/yarn.lock:undici@5.6.0 | High >= High floor, fix available |
 | High | deps | `GHSA-vxpw-j846-p89q` | trudesk/yarn.lock:undici@5.6.0 | High >= High floor, fix available |
 | High | deps | `GHSA-w573-4hg7-7wgq` | trudesk/yarn.lock:decode-uri-component@0.2.0 | High >= High floor (EPSS 0.249 also over threshold) |
-| High | deps | `GHSA-w5p7-h5w8-2hfq` | trudesk/yarn.lock:trim@0.0.1 | High >= High floor, fix available |
 | High | deps | `GHSA-wc69-rhjr-hc9g` | trudesk/yarn.lock:moment@2.24.0 | High >= High floor, fix available |
 | High | deps | `GHSA-wf6x-7x77-mvgw` | trudesk/yarn.lock:immutable@4.1.0 | High >= High floor, fix available |
 | High | deps | `GHSA-wf6x-7x77-mvgw` | trudesk/yarn.lock:immutable@4.3.0 | High >= High floor, fix available |

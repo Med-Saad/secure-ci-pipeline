@@ -28,12 +28,13 @@ precisely because it gives the gate real work — see `tuning-record.md`.
 | **Raw findings** | **1015** | Everything the five scanners emit: OSV 441 (app deps) + Trivy 425 (image: 402 language-pkg + 23 OS) + Semgrep 149 (SAST, unscoped) |
 | After scoping | 974 | SAST restricted to first-party source (149 → 108). The 41 dropped are in vendored/bundled trees — see §2 |
 | Gated layers | 572 | The report-only image **language** layer (402) is set aside: it overlaps the OSV app-dep layer, so gating it double-counts. It is published, not gated (§3) |
-| Meets policy | 243 | Severity floor (HIGH+) / KEV / EPSS applied to the 572 gated candidates |
-| **Blocking** | **242** | After the fix-availability relaxation drops 1 unfixable HIGH to report-only (§5) |
+| After suppression | 527 | 45 findings in 19 build-only packages **absent from the built image** are suppressed on a measured basis — not runtime-reachable (§6) |
+| Meets policy | 210 | Severity floor (HIGH+) / KEV / EPSS applied to what remains |
+| **Blocking** | **209** | After the fix-availability relaxation drops 1 unfixable HIGH to report-only (§5) |
 
-**76% of raw findings are noise** for the purpose of a merge gate — not "wrong,"
+**~79% of raw findings are noise** for the purpose of a merge gate — not "wrong,"
 but not a reason to block *this* change. The funnel is the argument that a
-severity-only gate (which would surface ~243 with no further discrimination) is
+severity-only gate (which would surface ~240 with no further discrimination) is
 the wrong tool.
 
 Raw data behind the chart: `examples/evidence/funnel.csv`,
@@ -135,21 +136,35 @@ on actively-maintained targets.)
 
 ---
 
-## 6. Suppressions: none applied to the target audit (and why)
+## 6. Suppressions: 19 on a *measured* basis (242 → 209)
 
-The authoritative trudesk audit applies **zero** suppressions. Two reasons:
+The trudesk audit suppresses **19 packages** (33 HIGH+ findings), dropping blocking
+from 242 to **209**. The basis is measured, not guessed: each package carries HIGH+
+advisories in the source `yarn.lock` **but is absent from the built container
+image** (cross-referenced against the Trivy image scan). A vulnerability in a
+package that is not in the deployed artifact is **not runtime-reachable**.
 
-1. Every suppression is a semantic claim about the target's code. Verifying
-   trudesk internals well enough to make those claims safely is out of scope for
-   autonomous execution — writing confident suppressions I cannot defend would be
-   the single worst failure mode of this working mode (`DEFENSE.md` §0).
-2. The gate's delta model means most inherited noise is handled by the
-   *merge-base* axis on real PRs, not by hand-written suppressions.
+This is the right kind of suppression — it rests on evidence (the image contents),
+not on an unverifiable claim about trudesk's code. The 19 are all build/dev
+tooling: `@babel/*`, `terser`, `webpack`, `loader-utils`, `serialize-javascript`,
+`json5`, `snyk` (the CLI), `shelljs`, `hoek`, chai internals (`get-func-name`,
+`pathval`), etc. Full list and per-package advisory ids: `DEFENSE.md` §2b and
+`examples/suppressions.trudesk.yml`.
 
-The suppression **mechanism** is still exercised — by unit tests
-(`tests/test_engine.py`) and a worked example (`examples/suppressions.example.yml`)
-with an explicitly low-confidence, clearly-scoped entry. See the suppression
-register in `DEFENSE.md` §2.
+**The narrow-scope caveat, stated on every entry:** this suppresses the *runtime
+severity gate* only. It does **not** claim the packages are harmless — a
+compromised build-time dependency is a real supply-chain threat, just a different
+one than a runtime CVE. `[measured / high]` that they are not runtime-reachable;
+`[JC-8]` flags that "absent from image" is strong but not absolute (e.g. `terser`
+minifies code that *is* shipped, though `terser` itself is not).
+
+The remaining **195** HIGH+ dependency findings are in packages that *do* ship in
+the image — correctly still blocking. Those need upgrades, not suppression.
+
+Suppressions on *our own* code are handled differently: the self-scan's real
+`run-shell-injection` findings were **fixed, not suppressed** (`DEFENSE.md` §2a).
+The mechanism is also unit-tested (`tests/test_engine.py`); the format is
+documented in `examples/suppressions.example.yml`.
 
 ---
 

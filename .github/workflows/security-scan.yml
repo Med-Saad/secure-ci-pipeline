@@ -48,6 +48,10 @@ on:
         description: "Comma-separated directories to exclude from OSV dependency scanning (e.g. committed sample SBOMs / test fixtures that are not the repo's real supply chain)."
         type: string
         default: ""
+      suppressions-file:
+        description: "Path to a ci-gate suppressions YAML/JSON (relative to the job workspace, e.g. _gate/examples/suppressions.trudesk.yml)."
+        type: string
+        default: ""
       secrets-full-history:
         description: "Scan the full git history for secrets (vs. working tree only)."
         type: boolean
@@ -259,10 +263,12 @@ jobs:
           FULL_AUDIT: ${{ inputs.full-audit }}
           FAIL_ON_BLOCK: ${{ inputs.fail-on-block }}
           GATE_TITLE: ${{ inputs.target-repo || github.repository }}
+          SUPPRESSIONS_FILE: ${{ inputs.suppressions-file }}
         run: |
           # Build the argument list explicitly so only the scanners that actually
           # produced output are passed to the gate.
           args=(evaluate --kev out/kev.json)
+          [ -n "$SUPPRESSIONS_FILE" ] && [ -f "$SUPPRESSIONS_FILE" ] && args+=(--suppressions "$SUPPRESSIONS_FILE")
           [ -f out/osv.json ]         && args+=(--osv out/osv.json)
           [ -f out/trivy-image.json ] && args+=(--trivy out/trivy-image.json)
           [ -f out/semgrep.sarif ]    && args+=(--semgrep out/semgrep.sarif)
